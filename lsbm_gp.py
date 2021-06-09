@@ -1,9 +1,8 @@
 #! /usr/bin/env python3
 import numpy as np
 from collections import Counter
-from scipy.stats import norm
-from scipy.stats import t
-from scipy.special import logsumexp, loggamma
+from scipy.stats import norm, t
+from scipy.special import logsumexp
 
 ####################################
 ### LSBM with Gaussian processes ###
@@ -278,21 +277,6 @@ class lsbm_gp_gibbs:
                         self.X_Csi_X[zold][j] = X_Csi_X_Prop[j]
         return None
 
-    ###############################
-    ### Marginal log-likelihood ###
-    ###############################
-    def marginal_loglikelihood(self):
-        loglik = 0
-        for k in range(self.K):
-            loglik -= self.d * self.nk[k]/2 * np.log(2*np.pi) 
-            loglik += self.d * (self.a0 * np.log(self.b0) - loggamma(self.a0))
-            for j in range(self.d):
-                if j == 0 and self.first_linear:
-                    loglik -= self.a[k] * np.log(self.b[j][k])
-                else:
-                    loglik += np.sqrt(np.linalg.det(self.Lambda[j][k])) - self.a[k] * np.log(self.b[j][k]) - np.sqrt(np.linalg.det(self.Lambda0[j]))
-        return loglik
-
     ###################################################################################
     ### Calculate maximum a posteriori estimate of the parameters given z and theta ###
     ###################################################################################
@@ -317,7 +301,7 @@ class lsbm_gp_gibbs:
                         mean[k,j][i] = np.matmul(csi_left, Csi_X[k,j])
                         var = mm.csi[k,j](x,x) - np.matmul(np.matmul(csi_left, mm.Csi_I[k,j]), np.transpose(csi_left))
                         confint[k,j][i] = t.interval(0.95, df=2*mm.a[k], loc=mean[k,j][i], scale=np.sqrt(mm.b[j][k] / mm.a[k] * (1 + var)))
-        return mean, confint, mm.mu, mm.marginal_loglikelihood()
+        return mean, confint
 
     #####################
     ### MCMC sampling ###
