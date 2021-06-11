@@ -69,9 +69,9 @@ class lsbm_gp_gibbs:
         ## Initialise hyperparameter vectors
         self.nk = Counter(self.z)
         self.a = {}; self.groups = {}; self.X_groups = {}; self.theta_groups = {}
-        for k in self.K:
+        for k in range(self.K):
             self.a[k] = self.a0 + self.nk[k] / 2
-            self.groups[k] = np.arange(n)[self.z == k]
+            self.groups[k] = np.arange(self.n)[self.z == k]
             self.X_groups[k] = self.X[self.z == k]
             self.theta_groups[k] = self.theta[self.z == k]
         self.b = {}; self.Csi_I = {}; self.X_Csi_X = {}
@@ -84,9 +84,9 @@ class lsbm_gp_gibbs:
                 if j == 0 and self.first_linear:
                     self.b[j][k] = self.b0 + np.sum((X - self.theta[self.z == k]) ** 2) / 2
                 else:
-                    self.Csi_I[k][j] = np.matmul()
-                    self.X_Csi_X[k][j] = np.matmul()
-                    self.b[j][k] = self.b0 + np.matmul()
+                    self.Csi_I[k][j] = np.linalg.inv(self.csi[k,j](self.theta_groups[k],self.theta_groups[k]) + np.diag(np.ones(self.nk[k])))
+                    self.X_Csi_X[k][j] = np.matmul(np.matmul(np.transpose(self.X_groups[k]), self.Csi_I[k][j]),self.X_groups[k])
+                    self.b[j][k] = self.b0 + self.X_Csi_X[k][j] / 2
                     
     ########################################################
     ### a. Resample the allocations using Gibbs sampling ###
