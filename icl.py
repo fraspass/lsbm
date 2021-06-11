@@ -22,9 +22,10 @@ lab = np.loadtxt('Data/labs2.csv', dtype=int)
 
 import lsbm
 fW = {}
-fW[0] = lambda x: np.array([x])
-for j in range(5):
-    fW[j] = lambda x: np.array([x ** 2, x])
+for k in range(4):
+    fW[k,0] = lambda x: np.array([x])
+    for j in range(1,5):
+        fW[k,j] = lambda x: np.array([x ** 2, x])
 
 ## Truncated power splines
 knots = {}
@@ -33,18 +34,17 @@ mmin = np.min(X,axis=0)[0]
 mmax = np.max(X,axis=0)[0]
 knots =  np.linspace(start=mmin,stop=mmax,num=nknots+2)[1:-1]
 
-fW[0] = lambda x: np.array([x])
-for j in range(1,5):
-    fW[j] = lambda x: np.array([x, x ** 2, x ** 3] + [relu(x - knot) ** 3 for knot in knots])
+for k in range(4):
+    fW[k,0] = lambda x: np.array([x])
+    for j in range(1,5):
+        fW[k,j] = lambda x: np.array([x, x ** 2, x ** 3] + [relu(x - knot) ** 3 for knot in knots])
 
-## This works when variance and theta are NOT resampled
+## Set up the model & posterior sampler
 m = lsbm.lsbm_gibbs(X=X[:,:5], K=4, W_function=fW)
 np.random.seed(11711)
 m.initialise(z=KMeans(n_clusters=m.K).fit_predict(m.X[:,:5]), theta=X[:,0]+np.random.normal(size=m.n,scale=0.01), 
                             Lambda_0=1/m.n, mu_theta=X[:,0].mean(), sigma_theta=10, b_0=0.01)
 q = m.mcmc(samples=10000, burn=1000, sigma_prop=0.5, thinning=1)
-
-ari(lab, m.z)
 
 psm = np.zeros((m.n,m.n))
 for i in range(q[1].shape[2]):
