@@ -76,7 +76,7 @@ class lsbm_gibbs:
                     W = self.W[k,j][self.z == k]
                     self.WtW[j][k] = np.dot(W.T,W)
                     self.WtX[j][k] = np.dot(W.T,X)
-                    self.Lambda_inv[j][k] = self.WtW[j][k] + self.Lambda0_inv[j]
+                    self.Lambda_inv[j][k] = self.WtW[j][k] + self.Lambda0_inv[k,j]
                     self.Lambda[j][k] = np.linalg.inv(self.Lambda_inv[j][k])
                     self.mu[j][k] = np.dot(self.Lambda[j][k], self.WtX[j][k])
                     self.b[j][k] = self.b0 + (np.dot(X.T,X) - np.dot(self.mu[j][k].T, np.dot(self.Lambda_inv[j][k],self.mu[j][k]))) / 2
@@ -112,7 +112,7 @@ class lsbm_gibbs:
                     self.WtX[j][zold] -= self.W[zold,j][i] * position[j]
                     Lambda_inv_old[j] = np.copy(self.Lambda_inv[j][zold])
                     Lambda_old[j] = np.copy(self.Lambda[j][zold])
-                    self.Lambda_inv[j][zold] = self.WtW[j][zold] + self.Lambda0_inv[j]
+                    self.Lambda_inv[j][zold] = self.WtW[j][zold] + self.Lambda0_inv[zold,j]
                     self.Lambda[j][zold] = np.linalg.inv(self.Lambda_inv[j][zold])
                     mu_old[j] = np.copy(self.mu[j][zold])
                     self.mu[j][zold] = np.dot(self.Lambda[j][zold], self.WtX[j][zold])
@@ -155,7 +155,7 @@ class lsbm_gibbs:
                         self.b[j][znew] += np.dot(self.mu[j][znew].T,np.dot(self.Lambda_inv[j][znew],self.mu[j][znew])) / 2 
                         self.WtW[j][znew] += np.outer(self.W[znew,j][i],self.W[znew,j][i])
                         self.WtX[j][znew] += self.W[znew,j][i] * position[j]
-                        self.Lambda_inv[j][znew] = self.WtW[j][self.z[i]] + self.Lambda0_inv[j]
+                        self.Lambda_inv[j][znew] = self.WtW[j][znew] + self.Lambda0_inv[znew,j]
                         self.Lambda[j][znew] = np.linalg.inv(self.Lambda_inv[j][znew])
                         self.mu[j][znew] = np.dot(self.Lambda[j][znew], self.WtX[j][znew])
                         self.b[j][znew] += (position[j] ** 2 - np.dot(self.mu[j][znew].T,np.dot(self.Lambda_inv[j][znew],self.mu[j][znew]))) / 2
@@ -194,7 +194,7 @@ class lsbm_gibbs:
                     self.WtX[j][zold] -= self.W[zold,j][i] * position[j]
                     Lambda_inv_old[j] = np.copy(self.Lambda_inv[j][zold])
                     Lambda_old[j] = np.copy(self.Lambda[j][zold])
-                    self.Lambda_inv[j][zold] = self.WtW[j][zold] + self.Lambda0_inv[j]
+                    self.Lambda_inv[j][zold] = self.WtW[j][zold] + self.Lambda0_inv[zold,j]
                     self.Lambda[j][zold] = np.linalg.inv(self.Lambda_inv[j][zold])
                     mu_old[j] = np.copy(self.mu[j][zold])
                     self.mu[j][zold] = np.dot(self.Lambda[j][zold], self.WtX[j][zold])
@@ -214,8 +214,8 @@ class lsbm_gibbs:
                 if j == 0 and self.first_linear:
                     numerator_accept += t.logpdf(position_prop[j], df=2*self.a[zold], loc=theta_prop, scale=np.sqrt(self.b[j][zold] / self.a[zold])) 
                 else:
-                    numerator_accept += t.logpdf(position_prop[j], df=2*self.a[zold], loc=np.dot(W_prop[j],self.mu[j][zold]), 
-                            scale=np.sqrt(self.b[j][zold] / self.a[zold] * (1 + np.dot(W_prop[j].T, np.dot(self.Lambda[j][zold], W_prop[j])))))
+                    numerator_accept += t.logpdf(position_prop[j], df=2*self.a[zold], loc=np.dot(W_prop[zold,j],self.mu[j][zold]), 
+                            scale=np.sqrt(self.b[j][zold] / self.a[zold] * (1 + np.dot(W_prop[zold,j].T, np.dot(self.Lambda[j][zold], W_prop[zold,j])))))
             denominator_accept = norm.logpdf(theta_old,loc=self.mu_theta,scale=self.sigma_theta)
             for j in range(self.d):
                 if j == 0 and self.first_linear:
@@ -255,7 +255,7 @@ class lsbm_gibbs:
                         self.b[j][zold] += np.dot(self.mu[j][zold].T,np.dot(self.Lambda_inv[j][zold],self.mu[j][zold])) / 2 
                         self.WtW[j][zold] += np.outer(self.W[zold,j][i],self.W[zold,j][i])
                         self.WtX[j][zold] += self.W[zold,j][i] * position_prop[j]
-                        self.Lambda_inv[j][zold] = self.WtW[j][zold] + self.Lambda0_inv[j]
+                        self.Lambda_inv[j][zold] = self.WtW[j][zold] + self.Lambda0_inv[zold,j]
                         self.Lambda[j][zold] = np.linalg.inv(self.Lambda_inv[j][zold])
                         self.mu[j][zold] = np.dot(self.Lambda[j][zold], self.WtX[j][zold])
                         self.b[j][zold] += (position_prop[j] ** 2 - np.dot(self.mu[j][zold].T,np.dot(self.Lambda_inv[j][zold],self.mu[j][zold]))) / 2
