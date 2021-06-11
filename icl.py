@@ -16,7 +16,8 @@ rc('text', usetex=True)
 def relu(x):
     return x * (x > 0)
 
-X = np.loadtxt('Data/icll2.csv', delimiter=',')[:,:5]
+## X = np.loadtxt('Data/icll2.csv', delimiter=',')[:,:5]
+X = np.load('Data/X_icl2.npy')[:,:5]
 lab = np.loadtxt('Data/labs2.csv', dtype=int)
 
 import lsbm
@@ -34,7 +35,7 @@ knots =  np.linspace(start=mmin,stop=mmax,num=nknots+2)[1:-1]
 
 fW[0] = lambda x: np.array([x])
 for j in range(1,5):
-    fW[j] = lambda x: np.array([x, x ** 2, x ** 3] + [relu(- x + knot) ** 3 for knot in knots])
+    fW[j] = lambda x: np.array([x, x ** 2, x ** 3] + [relu(x - knot) ** 3 for knot in knots])
 
 ## This works when variance and theta are NOT resampled
 m = lsbm.lsbm_gibbs(X=X[:,:5], K=4, W_function=fW)
@@ -91,7 +92,6 @@ for g in [2,3,0,1]:
 
 plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
 plt.ylabel('$$\\hat{\\mathbf{X}}_3$$')
-plt.yticks(ticks=[-4,-2,0,2,4,6,8])
 plt.savefig("x13.pdf",bbox_inches='tight')
 plt.show()
 

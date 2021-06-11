@@ -39,10 +39,11 @@ class lsbm_gibbs:
         self.g_prior = g_prior
         self.W = {}
         for j in range(self.d):
-            self.W[j] = np.array([self.fW[j](self.theta[i]) for i in range(self.n)])
+            for k in range(self.K):
+                self.W[k,j] = np.array([self.fW[k,j](self.theta[i]) for i in range(self.n)])
         self.fixed_W = {}
         for j in self.fixed_function:
-            self.fixed_W[j] = np.array([self.fixed_function[j](self.theta[i]) for i in range(self.n)])[:,0] ## rewrite using only one coefficient (1)
+            self.fixed_W[j] = np.array([self.fixed_function[k,j](self.theta[i]) for i in range(self.n)])[:,0] ## rewrite using only one coefficient (1)
         ## Prior parameters
         self.nu = nu
         self.a0 = a_0
@@ -50,11 +51,12 @@ class lsbm_gibbs:
         self.lambda_coef = Lambda_0
         self.Lambda0 = {}; self.Lambda0_inv = {}
         for j in range(self.d):
-            if g_prior:
-                self.Lambda0_inv[j] = Lambda_0 * np.dot(self.W[j].T,self.W[j]) # np.diag(np.ones(len(self.fW[j](1))) * Lambda_0)
-            else:
-                self.Lambda0_inv[j] = np.diag(np.ones(len(self.fW[j](1))) * Lambda_0)
-            self.Lambda0[j] = np.linalg.inv(self.Lambda0_inv[j])
+            for k in range(self.K):
+                if g_prior:
+                    self.Lambda0_inv[k,j] = Lambda_0 * np.dot(self.W[k,j].T,self.W[k,j]) # np.diag(np.ones(len(self.fW[j](1))) * Lambda_0)
+                else:
+                    self.Lambda0_inv[k,j] = np.diag(np.ones(len(self.fW[k,j](1))) * Lambda_0)
+                self.Lambda0[k,j] = np.linalg.inv(self.Lambda0_inv[k,j])
         self.nu = nu
         ## Initialise hyperparameter vectors
         self.nk = Counter(self.z)
@@ -71,7 +73,7 @@ class lsbm_gibbs:
                 if j == 0 and self.first_linear:
                     self.b[j][k] = self.b0 + np.sum((X - self.theta[self.z == k]) ** 2) / 2
                 else:
-                    W = self.W[j][self.z == k]
+                    W = self.W[k,j][self.z == k]
                     self.WtW[j][k] = np.dot(W.T,W)
                     self.WtX[j][k] = np.dot(W.T,X)
                     self.Lambda_inv[j][k] = self.WtW[j][k] + self.Lambda0_inv[j]
@@ -106,8 +108,8 @@ class lsbm_gibbs:
                     self.b[j][zold] -= (position[j] ** 2 - np.dot(self.mu[j][zold].T,np.dot(self.Lambda_inv[j][zold],self.mu[j][zold]))) / 2 
                     WtW_old[j] = np.copy(self.WtW[j][zold])
                     WtX_old[j] = np.copy(self.WtX[j][zold])
-                    self.WtW[j][zold] -= np.outer(self.W[j][i],self.W[j][i])
-                    self.WtX[j][zold] -= self.W[j][i] * position[j]
+                    self.WtW[j][zold] -= np.outer(self.W[zold,j][i],self.W[zold,j][i])
+                    self.WtX[j][zold] -= self.W[zold,j][i] * position[j]
                     Lambda_inv_old[j] = np.copy(self.Lambda_inv[j][zold])
                     Lambda_old[j] = np.copy(self.Lambda[j][zold])
                     self.Lambda_inv[j][zold] = self.WtW[j][zold] + self.Lambda0_inv[j]
@@ -122,40 +124,41 @@ class lsbm_gibbs:
                     if j == 0 and self.first_linear:
                         community_probs[k] += t.logpdf(position[j], df=2*self.a[k], loc=self.theta[i], scale=np.sqrt(self.b[j][k] / self.a[k])) 
                     else:
-                        community_probs[k] += t.logpdf(position[j], df=2*self.a[k], loc=np.dot(self.W[j][i],self.mu[j][k]), 
-                                scale=np.sqrt(self.b[j][k] / self.a[k] * (1 + np.dot(self.W[j][i].T, np.dot(self.Lambda[j][k], self.W[j][i])))))              
+                        community_probs[k] += t.logpdf(position[j], df=2*self.a[k], loc=np.dot(self.W[k,j][i],self.mu[j][k]), 
+                                scale=np.sqrt(self.b[j][k] / self.a[k] * (1 + np.dot(self.W[k,j][i].T, np.dot(self.Lambda[j][k], self.W[k,j][i])))))              
             ## Raise error if nan probabilities are computed
             if np.isnan(community_probs).any():
                 print(community_probs)
                 raise ValueError("Error in the allocation probabilities. Check invertibility of the covariance matrices.")
             ## Update allocation
-            self.z[i] = np.random.choice(self.K, p=np.exp(community_probs - logsumexp(community_probs)))
+            znew = np.random.choice(self.K, p=np.exp(community_probs - logsumexp(community_probs)))
+            self.z[i] = np.copy(znew) 
             ## Update parameters
-            self.a[self.z[i]] += .5
-            self.nk[self.z[i]] += 1.0
-            if self.z[i] == zold:
+            self.a[znew] += .5
+            self.nk[znew] += 1.0
+            if znew == zold:
                 ## Re-update to old values
                 for j in range(self.d):
-                    self.b[j][self.z[i]] = b_old[j]
+                    self.b[j][znew] = b_old[j]
                     if not (j == 0 and self.first_linear):
-                        self.WtW[j][self.z[i]] = WtW_old[j]
-                        self.WtX[j][self.z[i]] = WtX_old[j]
-                        self.Lambda_inv[j][self.z[i]] = Lambda_inv_old[j]
-                        self.Lambda[j][self.z[i]] = Lambda_old[j]
-                        self.mu[j][self.z[i]] = mu_old[j] 
+                        self.WtW[j][znew] = WtW_old[j]
+                        self.WtX[j][znew] = WtX_old[j]
+                        self.Lambda_inv[j][znew] = Lambda_inv_old[j]
+                        self.Lambda[j][znew] = Lambda_old[j]
+                        self.mu[j][znew] = mu_old[j] 
             else:
                 ## Update to new values
                 for j in range(self.d):
                     if j == 0 and self.first_linear:
-                        self.b[j][self.z[i]] += (position[j] - self.theta[i]) ** 2 / 2
+                        self.b[j][znew] += (position[j] - self.theta[i]) ** 2 / 2
                     else:
-                        self.b[j][self.z[i]] += np.dot(self.mu[j][self.z[i]].T,np.dot(self.Lambda_inv[j][self.z[i]],self.mu[j][self.z[i]])) / 2 
-                        self.WtW[j][self.z[i]] += np.outer(self.W[j][i],self.W[j][i])
-                        self.WtX[j][self.z[i]] += self.W[j][i] * position[j]
-                        self.Lambda_inv[j][self.z[i]] = self.WtW[j][self.z[i]] + self.Lambda0_inv[j]
-                        self.Lambda[j][self.z[i]] = np.linalg.inv(self.Lambda_inv[j][self.z[i]])
-                        self.mu[j][self.z[i]] = np.dot(self.Lambda[j][self.z[i]], self.WtX[j][self.z[i]])
-                        self.b[j][self.z[i]] += (position[j] ** 2 - np.dot(self.mu[j][self.z[i]].T,np.dot(self.Lambda_inv[j][self.z[i]],self.mu[j][self.z[i]]))) / 2
+                        self.b[j][znew] += np.dot(self.mu[j][znew].T,np.dot(self.Lambda_inv[j][znew],self.mu[j][znew])) / 2 
+                        self.WtW[j][znew] += np.outer(self.W[znew,j][i],self.W[znew,j][i])
+                        self.WtX[j][znew] += self.W[znew,j][i] * position[j]
+                        self.Lambda_inv[j][znew] = self.WtW[j][self.z[i]] + self.Lambda0_inv[j]
+                        self.Lambda[j][znew] = np.linalg.inv(self.Lambda_inv[j][znew])
+                        self.mu[j][znew] = np.dot(self.Lambda[j][znew], self.WtX[j][znew])
+                        self.b[j][znew] += (position[j] ** 2 - np.dot(self.mu[j][znew].T,np.dot(self.Lambda_inv[j][znew],self.mu[j][znew]))) / 2
         return None
 
     ##############################################
@@ -187,8 +190,8 @@ class lsbm_gibbs:
                     self.b[j][zold] -= (position[j] ** 2 - np.dot(self.mu[j][zold].T,np.dot(self.Lambda_inv[j][zold],self.mu[j][zold]))) / 2 
                     WtW_old[j] = np.copy(self.WtW[j][zold])
                     WtX_old[j] = np.copy(self.WtX[j][zold])
-                    self.WtW[j][zold] -= np.outer(self.W[j][i],self.W[j][i])
-                    self.WtX[j][zold] -= self.W[j][i] * position[j]
+                    self.WtW[j][zold] -= np.outer(self.W[zold,j][i],self.W[zold,j][i])
+                    self.WtX[j][zold] -= self.W[zold,j][i] * position[j]
                     Lambda_inv_old[j] = np.copy(self.Lambda_inv[j][zold])
                     Lambda_old[j] = np.copy(self.Lambda[j][zold])
                     self.Lambda_inv[j][zold] = self.WtW[j][zold] + self.Lambda0_inv[j]
@@ -200,7 +203,8 @@ class lsbm_gibbs:
             theta_prop = np.random.normal(loc=theta_old, scale=sigma_prop)
             for j in range(self.d):
                 position_prop[j] = self.X[i,j]
-                W_prop[j] = self.fW[j](theta_prop)
+                for k in range(self.K):
+                    W_prop[k,j] = self.fW[k,j](theta_prop)
                 if j in self.fixed_function:
                     W_prop_fixed[j] = self.fixed_function[j](theta_prop)
                     position_prop[j] -= W_prop_fixed[j]
@@ -217,8 +221,8 @@ class lsbm_gibbs:
                 if j == 0 and self.first_linear:
                     denominator_accept += t.logpdf(position[j], df=2*self.a[zold], loc=theta_old, scale=np.sqrt(self.b[j][zold] / self.a[zold])) 
                 else:
-                    denominator_accept += t.logpdf(position[j], df=2*self.a[zold], loc=np.dot(self.W[j][i],self.mu[j][zold]), 
-                            scale=np.sqrt(self.b[j][zold] / self.a[zold] * (1 + np.dot(self.W[j][i].T, np.dot(self.Lambda[j][zold], self.W[j][i])))))             
+                    denominator_accept += t.logpdf(position[j], df=2*self.a[zold], loc=np.dot(self.W[zold,j][i],self.mu[j][zold]), 
+                            scale=np.sqrt(self.b[j][zold] / self.a[zold] * (1 + np.dot(self.W[zold,j][i].T, np.dot(self.Lambda[j][zold], self.W[zold,j][i])))))             
             ## Calculate acceptance probability
             accept_ratio = numerator_accept - denominator_accept
             accept = (-np.random.exponential(1) < accept_ratio)
@@ -241,15 +245,16 @@ class lsbm_gibbs:
                 ## Update to new values
                 for j in range(self.d):
                     ## Update design matrix
-                    self.W[j][i] = W_prop[j]
+                    for k in range(self.K):
+                        self.W[k,j][i] = W_prop[k,j]
                     if j in self.fixed_function:
                         self.fixed_W[j][i] = W_prop_fixed[j]
                     if j == 0 and self.first_linear:
                         self.b[j][zold] += (position[j] - self.theta[i]) ** 2 / 2
                     else:
                         self.b[j][zold] += np.dot(self.mu[j][zold].T,np.dot(self.Lambda_inv[j][zold],self.mu[j][zold])) / 2 
-                        self.WtW[j][zold] += np.outer(self.W[j][i],self.W[j][i])
-                        self.WtX[j][zold] += self.W[j][i] * position_prop[j]
+                        self.WtW[j][zold] += np.outer(self.W[zold,j][i],self.W[zold,j][i])
+                        self.WtX[j][zold] += self.W[zold,j][i] * position_prop[j]
                         self.Lambda_inv[j][zold] = self.WtW[j][zold] + self.Lambda0_inv[j]
                         self.Lambda[j][zold] = np.linalg.inv(self.Lambda_inv[j][zold])
                         self.mu[j][zold] = np.dot(self.Lambda[j][zold], self.WtX[j][zold])
