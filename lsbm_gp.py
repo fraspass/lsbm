@@ -142,7 +142,7 @@ class lsbm_gp_gibbs:
                         community_probs[k] += t.logpdf(position[j], df=2*self.a[k], loc=mu_star, scale=np.sqrt(self.b[j][k] / self.a[k] * (1 + csi_star)))              
             ## Raise error if nan probabilities are computed
             if np.isnan(community_probs).any():
-                print(community_probs)
+                print(csi_star)
                 raise ValueError("Error in the allocation probabilities.")
             ## Update allocation
             znew = np.random.choice(self.K, p=np.exp(community_probs - logsumexp(community_probs)))
@@ -171,7 +171,7 @@ class lsbm_gp_gibbs:
                         add_row = self.csi[znew,j](self.theta[i],self.theta_groups[znew])
                         ## add_row = np.insert(add_row, obj=ind_add, values=self.csi[znew,j](self.theta[i],self.theta[i]))
                         add_row[ind_add] += 1
-                        self.Csi_I[znew,j] = add_inverse(self.Csi_I[znew,j], row=add_row.reshape(1,-1), col=add_row.reshape(-1,1), ind=ind_add)
+                        self.Csi_I[znew,j] = add_inverse(self.Csi_I[znew,j], row=add_row, col=add_row, ind=ind_add)
                         self.X_Csi_X[znew,j] = np.matmul(np.matmul(np.transpose(self.X_groups[znew][:,j]), self.Csi_I[znew,j]),self.X_groups[znew][:,j])
                         self.b[j][znew] += self.X_Csi_X[znew,j] / 2 
         return None
@@ -191,7 +191,7 @@ class lsbm_gp_gibbs:
             zold = self.z[i]
             theta_old = self.theta[i]
             position = self.X[i]
-            indi = np.where(self.groups[zold] == i)[0]
+            indi = np.where(self.groups[zold] == i)[0][0]
             ## Update parameters of the distribution
             self.a[zold] -= .5
             self.nk[zold] -= 1.0
@@ -205,31 +205,34 @@ class lsbm_gp_gibbs:
                 else:
                     ## Update Csi
                     Csi_I_Old[j] = np.copy(self.Csi_I[zold,j])
-                    self.Csi_I[zold,j] = delete_inverse(Csi_I_Old, ind=indi)
+                    self.Csi_I[zold,j] = delete_inverse(Csi_I_Old[j], ind=indi)
+                    X_group_indi = np.delete(self.X_groups[zold][:,j], obj=indi)
                     ## Update X_Csi_X
-                    X_Csi_X_Old[j] = 2 * self.b[j][zold] - self.b0
-                    self.X_Csi_X[zold,j] = np.matmul(np.matmul(np.transpose(self.X_groups[zold][:,j]),self.Csi_I[zold,j]),self.X_groups[zold][:,j])
+                    X_Csi_X_Old[j] = 2 * (self.b[j][zold] - self.b0)
+                    self.X_Csi_X[zold,j] = np.matmul(np.matmul(X_group_indi.reshape(1,-1),self.Csi_I[zold,j]),X_group_indi.reshape(-1,1))
                     ## Update b
                     b_old[j] = float(np.copy(self.b[j][zold]))
                     self.b[j][zold] -= X_Csi_X_Old[j] / 2 
                     self.b[j][zold] += self.X_Csi_X[zold,j] / 2 
             ## Calculate proposal
             theta_prop = np.random.normal(loc=theta_old, scale=sigma_prop)
-            position_prop = np.copy(np.position)
+            position_prop = np.copy(position)
             for j in range(self.d):
                 if j in self.fixed_function:
                     position_prop[j] -= self.fixed_function[j](theta_prop)
-                    b_prop[j] = self.b0
                 ## Update to new values
                 for j in range(self.d):
+                    b_prop[j] = self.b0
                     if j == 0 and self.first_linear:
-                        b_prop[j] += (position_prop[j] - theta_prop[i]) ** 2 / 2
+                        b_prop[j] += (position_prop[j] - theta_prop) ** 2 / 2
                     else:
-                        add_row = self.csi[zold,j](theta_prop,np.add(np.delete(self.theta_groups[zold], obj=indi), obj=indi, values=theta_prop)).reshape(1,-1)
+                        tz = np.copy(self.theta_groups[zold])
+                        np.put(tz, ind=indi, v=theta_prop)
+                        add_row = self.csi[zold,j](theta_prop,tz)
                         add_row[indi] += 1
-                        Csi_I_Prop[j] = add_inverse(self.Csi_I[zold,j], row=add_row, col=np.transpose(add_row), ind=indi)
-                        X_Csi_X_Prop[j] = np.matmul(np.matmul(np.transpose(self.X_groups[zold][:,j]), self.Csi_I[zold,j]),self.X_groups[zold][:,j])
-                        b_prop[j] += X_Csi_X_Prop[zold][j] / 2 
+                        Csi_I_Prop[j] = add_inverse(self.Csi_I[zold,j], row=add_row, col=add_row, ind=indi)
+                        X_Csi_X_Prop[j] = float(np.matmul(np.matmul(self.X_groups[zold][:,j].reshape(1,-1), Csi_I_Prop[j]),self.X_groups[zold][:,j].reshape(-1,1)))
+                        b_prop[j] += X_Csi_X_Prop[j] / 2 
             ## Calculate acceptance ratio
             numerator_accept = norm.logpdf(theta_prop,loc=self.mu_theta,scale=self.sigma_theta)
             for j in range(self.d):
@@ -237,42 +240,43 @@ class lsbm_gp_gibbs:
                     numerator_accept += t.logpdf(position_prop[j], df=2*self.a[zold], loc=theta_prop, scale=np.sqrt(self.b[j][zold] / self.a[zold])) 
                 else:
                     csi_left = self.csi[zold,j](theta_prop, np.delete(self.theta_groups[zold], obj=indi))
-                    csi_prod = np.matmul(csi_left, self.Csi_I[zold,j])
-                    mu_star = np.matmul(csi_prod, np.delete(self.X_groups[zold], obj=indi, axis=0))
-                    csi_star = self.csi[zold,j](theta_prop,theta_prop) - np.matmul(csi_prod, np.transpose(csi_left))
+                    csi_prod = np.matmul(csi_left.reshape(1,-1), self.Csi_I[zold,j])
+                    mu_star = np.matmul(csi_prod, np.delete(self.X_groups[zold][:,j], obj=indi, axis=0))
+                    csi_star = self.csi[zold,j](theta_prop,theta_prop) - np.matmul(csi_prod, csi_left.reshape(-1,1))
                     numerator_accept += t.logpdf(position_prop[j], df=2*self.a[zold], loc=mu_star, 
-                            scale=np.sqrt(b_prop[j] / self.a[zold] * (1 + csi_star)))
+                            scale=np.sqrt(self.b[j][zold] / self.a[zold] * (1 + csi_star)))
             denominator_accept = norm.logpdf(theta_old,loc=self.mu_theta,scale=self.sigma_theta)
             for j in range(self.d):
                 if j == 0 and self.first_linear:
                     denominator_accept += t.logpdf(position[j], df=2*self.a[zold], loc=theta_old, scale=np.sqrt(self.b[j][zold] / self.a[zold])) 
                 else:
                     csi_left = self.csi[zold,j](theta_old, np.delete(self.theta_groups[zold], obj=indi))
-                    csi_prod = np.matmul(csi_left, self.Csi_I[zold,j])
-                    mu_star = np.matmul(csi_prod, np.delete(self.X_groups[zold], obj=indi, axis=0))
-                    csi_star = self.csi[zold,j](theta_old,theta_old) - np.matmul(csi_prod, np.transpose(csi_left))
+                    csi_prod = np.matmul(csi_left.reshape(1,-1), self.Csi_I[zold,j])
+                    mu_star = np.matmul(csi_prod, np.delete(self.X_groups[zold][:,j], obj=indi, axis=0))
+                    csi_star = self.csi[zold,j](theta_old,theta_old) - np.matmul(csi_prod, csi_left.reshape(-1,1))
                     denominator_accept += t.logpdf(position[j], df=2*self.a[zold], loc=mu_star, 
                             scale=np.sqrt(self.b[j][zold] / self.a[zold] * (1 + csi_star)))           
             ## Calculate acceptance probability
-            accept_ratio = numerator_accept - denominator_accept
+            accept_ratio = float(numerator_accept - denominator_accept)
             accept = (-np.random.exponential(1) < accept_ratio)
             ## Update parameters
             self.a[zold] += .5
             self.nk[zold] += 1.0
             if accept:
                 self.theta[i] = theta_prop
+                np.put(self.theta_groups[zold], ind=indi, v=theta_prop)
             if not accept:
                 ## Re-update to old values
                 for j in range(self.d):
                     self.b[j][zold] = b_old[j]
-                    if not(j == 0 and self.first_linear):
+                    if not (j == 0 and self.first_linear):
                         self.Csi_I[zold,j] = Csi_I_Old[j]
                         self.X_Csi_X[zold,j] = X_Csi_X_Old[j]
             else:
                 ## Update to new values
                 for j in range(self.d):
                     self.b[j][zold] = b_prop[j]
-                    if not(j == 0 and self.first_linear):
+                    if not (j == 0 and self.first_linear):
                         self.Csi_I[zold,j] = Csi_I_Prop[j]
                         self.X_Csi_X[zold,j] = X_Csi_X_Prop[j]
         return None
@@ -288,7 +292,8 @@ class lsbm_gp_gibbs:
             for k in range(mm.K):
                 mean[k,j] = np.zeros(len(range_values))
                 confint[k,j] = np.zeros((len(range_values),2))
-                Csi_X[k,j] = np.matmul(mm.Csi_I[k,j], mm.X_groups[k,j])
+                if not (j == 0 and mm.first_linear):
+                    Csi_X[k,j] = np.matmul(mm.Csi_I[k,j], mm.X_groups[k][:,j])
         for i in range(len(range_values)):
             x = range_values[i]
             for j in range(mm.d):
@@ -297,7 +302,7 @@ class lsbm_gp_gibbs:
                         mean[k,j][i] = x
                         confint[k,j][i] = t.interval(0.95, df=2*mm.a[k], loc=x, scale=np.sqrt(mm.b[j][k] / mm.a[k])) 
                     else:
-                        csi_left = mm.csi[k,j](x, self.theta_groups[k]).reshape(-1,1)
+                        csi_left = mm.csi[k,j](x, mm.theta_groups[k])
                         mean[k,j][i] = np.matmul(csi_left, Csi_X[k,j])
                         var = mm.csi[k,j](x,x) - np.matmul(np.matmul(csi_left, mm.Csi_I[k,j]), np.transpose(csi_left))
                         confint[k,j][i] = t.interval(0.95, df=2*mm.a[k], loc=mean[k,j][i], scale=np.sqrt(mm.b[j][k] / mm.a[k] * (1 + var)))
@@ -317,7 +322,7 @@ class lsbm_gp_gibbs:
             for s in range(samples+burn):
                 print('\rChain:', chain+1,'/', chains, '\tBurnin:', s+1 if s<burn else burn, '/', burn, 
                             '\tSamples:', s-burn+1 if s>burn else 0,'/', samples, end='')
-                move = ['communities']###,'parameters']
+                move = ['communities','parameters']
                 m = np.random.choice(move)
                 if m == 'communities':
                     self.gibbs_communities(l=self.q)
