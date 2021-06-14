@@ -16,7 +16,6 @@ rc('text', usetex=True)
 def relu(x):
     return x * (x > 0)
 
-## X = np.loadtxt('Data/icll2.csv', delimiter=',')[:,:5]
 X = np.load('Data/X_icl2.npy')[:,:5]
 lab = np.loadtxt('Data/labs2.csv', dtype=int)
 
