@@ -12,4 +12,25 @@ The main tool for inference on LSBMs is the MCMC sampler `lsbm_gp_gibbs` contain
 Additionally, the file `lsbm.py` contains a simplified class `lsbm_gibbs` which can be used for models where the kernel functions are assumed to be *inner products*. The latent functions in such models can be expressed in the form <img src="svgs/a47365b803cbfbae589ba00d757323c3.svg?invert_in_darkmode" align=middle width=181.69460429999998pt height=24.65753399999998pt/>, for basis functions <img src="svgs/166782492ccc9f0344cf301c405ca9fd.svg?invert_in_darkmode" align=middle width=96.20125349999998pt height=22.831056599999986pt/> and corresponding weights <img src="svgs/5628dabe825c1081c1d0ab40cb139570.svg?invert_in_darkmode" align=middle width=85.20361904999999pt height=22.648391699999998pt/> with joint normal-inverse-gamma prior with the variance parameter: 
 <p align="center"><img src="svgs/b2769a868c59cee2f9ae9803842a9a1a.svg?invert_in_darkmode" align=middle width=230.74284915pt height=20.50407645pt/></p>
 
-In this case, the class `lsbm` does *not* require a dictionary of kernel functions for initialisation, but a dictionary `W_function` containing the basis functions. 
+The class `lsbm` does *not* require a dictionary of kernel functions for initialisation, but a dictionary `W_function` containing the basis functions. The prior parameters of the NIG prior are then specified using the function `initialisation` within the same class. The class uses the Zellner's <img src="svgs/3cf4fbd05970446973fc3d9fa3fe3c41.svg?invert_in_darkmode" align=middle width=8.430376349999989pt height=14.15524440000002pt/>-prior as default. 
+
+### Example: quadratic model
+
+For example, consider the model where all the community-specific curves are assumed to be quadratic in <img src="svgs/27e556cf3caa0673ac49a8f0de3c73ca.svg?invert_in_darkmode" align=middle width=8.17352744999999pt height=22.831056599999986pt/>, passing through the origin, and linear in the first dimension (with zero intercept and unit slope). Initialising the Gibbs sampler class in `lsbm` is easy, since the basis functions are straightforward to define:
+```python3
+phi = {}
+for k in range(K):
+    phi[k,0] = lambda theta: np.array([theta])
+    for j in range(1,d):
+        phi[k,j] = lambda theta: np.array([theta ** 2, theta])
+
+```
+
+Defining the kernels requires a bit more effort. Using the dictionary `phi` defined in the previous code snippet, the corresponding kernels -- assuming prior scale matrices `Delta` for the NIG prior -- are: 
+```python3
+csi = {}
+for k in range(K):
+    csi[k,0] = lambda theta,theta_prime: Delta[k,0] * np.matmul(fW[0](theta).reshape(-1,1),fW[0](theta_prime).reshape(1,-1)) 
+    for j in range(1,d):
+        csi[k,j] = lambda theta,theta_prime: np.matmul(np.matmul(fW[j](theta),Delta[k,j]),np.transpose(fW[j](theta_prime)))
+```
