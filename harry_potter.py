@@ -10,9 +10,10 @@ from matplotlib import rc
 rc('font',**{'family':'serif','serif':['Times']})
 rc('text', usetex=True)
 
+## Contruct the adjacency matrix
 A = np.zeros((65,65),int)
-A_friend = np.zeros((65,65),int)
 for line in np.loadtxt('Data/potter.csv',delimiter=',',dtype=str):
+    ## Example line '0,45,-', where '-' denotes enmity ('+' for friendship) 
     if line[2] == '-':
         A[int(line[0]),int(line[1])] = 1
         A[int(line[1]),int(line[0])] = 1
@@ -20,9 +21,8 @@ for line in np.loadtxt('Data/potter.csv',delimiter=',',dtype=str):
 ## Remove nodes without links
 one_link = np.where(np.logical_or(A.sum(axis=0) != 0, A.sum(axis=0) != 0))[0]
 A = A[one_link][:,one_link]
-names = np.loadtxt('Data/characters.csv',dtype=str,delimiter=',')[:,1][1:][one_link]
 
-## Spectral decomposition
+## Spectral decomposition and ASE
 Lambda, Gamma = np.linalg.eigh(A)
 k = np.argsort(np.abs(Lambda))[::-1][:2]
 X = np.dot(Gamma[:,k],np.diag(np.sqrt(np.abs(Lambda[k]))))
@@ -31,30 +31,37 @@ X = np.dot(Gamma[:,k],np.diag(np.sqrt(np.abs(Lambda[k]))))
 import lsbm
 fW = {}
 for j in range(2):
-    fW[j] = lambda x: np.array([x])
+    for k in range(2):
+        fW[k,j] = lambda x: np.array([x])
 
-## X2 = np.delete(X, 42, 0)
-## This works when variance and theta are NOT resampled
+## Construct the MCMC sampler object
 np.random.seed(117)
 m = lsbm.lsbm_gibbs(X=X[:,:2], K=2, W_function=fW)
+## Initialisation
 m.initialise(z=KMeans(n_clusters=m.K).fit_predict(m.X), theta=(np.abs(m.X[:,0])+np.random.normal(size=m.n,scale=0.000001)), 
                             Lambda_0=1/m.n, g_prior=False, b_0=0.01)
-q = m.mcmc(samples=2500, burn=500, sigma_prop=0.1, thinning=1)
+## Sampler
+q = m.mcmc(samples=10000, burn=1000, sigma_prop=0.1, thinning=1)
 
 ## Posterior similarity matrix
 psm = np.zeros((m.n,m.n))
 for i in range(q[1].shape[2]):
     psm += np.equal.outer(q[1][:,0,i],q[1][:,0,i])
 
+## Estimate of the posterior similarities
 psm /= q[1].shape[2]
 
-## Hierarchical clustering
+## Hierarchical clustering for estimated clustering
 from sklearn.cluster import AgglomerativeClustering
 cluster_model = AgglomerativeClustering(n_clusters=m.K, affinity='precomputed', linkage='average') 
+
+## Estimated clustering
 clust = cluster_model.fit_predict(1-psm) + 1
 
+## MAP curves
 uu = m.map(clust,X[:,0],np.linspace(np.min(X[:,0]),np.max(X[:,0]),250))
 
+## Figure 6(a)
 fig, ax = plt.subplots()
 xx = np.linspace(np.min(X[:,0]),np.max(X[:,0]),250)
 ax.scatter(X[:,0][clust==0], X[:,1][clust==0],c='#D81B60',edgecolor='black',linewidth=0.3)
@@ -86,20 +93,23 @@ ax.text(X[np.where(names=='Peter Pettigrew')[0],0][0],X[np.where(names=='Peter P
 plt.savefig("x12_harry.pdf",bbox_inches='tight')
 plt.show()
 
+## Define RELU function
 def relu(x):
     return x * (x > 0)
 
-## Truncated power splines
+## Setup for truncated power basis
 knots = {}
 nknots = 3
 mmin = np.min(X,axis=0)[0]
 mmax = np.max(X,axis=0)[0]
 knots =  np.linspace(start=mmin,stop=mmax,num=nknots+2)[1:-1]
 
-fW[0] = lambda x: np.array([x])
-for j in range(1,2):
-    fW[j] = lambda x: np.array([x, x ** 2, x ** 3] + [relu(x - knot) ** 3 for knot in knots])
+## Re-define the basis functions for the example with truncated power basis splines
+for k in range(2):
+    fW[k,0] = lambda x: np.array([x])
+    fW[k,1] = lambda x: np.array([x, x ** 2, x ** 3] + [relu(x - knot) ** 3 for knot in knots])
 
+## Sampler
 np.random.seed(11711)
 m = lsbm.lsbm_gibbs(X=X[:,:2], K=2, W_function=fW)
 m.initialise(z=KMeans(n_clusters=m.K).fit_predict(m.X), theta=(np.abs(m.X[:,0])+np.random.normal(size=m.n,scale=0.001)), 
@@ -118,59 +128,9 @@ from sklearn.cluster import AgglomerativeClustering
 cluster_model = AgglomerativeClustering(n_clusters=m.K, affinity='precomputed', linkage='average') 
 clust = cluster_model.fit_predict(1-psm)
 
+## Figure 6(b)
 map_est = m.map(z=clust, theta=q[0][:,0].mean(axis=1))
-
 plt.scatter(m.X[:,0],m.X[:,1],c=clust)
 plt.plot(np.linspace(0,np.max(m.X[:,0]),200), [np.dot(map_est[0][1][0],m.fW[1](x)) for x in np.linspace(0,np.max(m.X[:,0]),200)])
 plt.plot(np.linspace(0,np.max(m.X[:,0]),200), [np.dot(map_est[0][1][1],m.fW[1](x)) for x in np.linspace(0,np.max(m.X[:,0]),200)])
-plt.show()
-
-
-
-import networkx as nx
-G = nx.read_gml('Data/polblogs.gml', label='id')
-G.remove_nodes_from(list(nx.isolates(G)))
-A = np.array(nx.linalg.graphmatrix.adjacency_matrix(G).todense())
-A = ((A + A.T) > 0).astype(int)
-Lambda, Gamma = np.linalg.eigh(A)
-k = np.argsort(np.abs(Lambda))[::-1][:2]
-X = np.dot(Gamma[:,k],np.diag(np.sqrt(np.abs(Lambda[k]))))
-lab = []
-for node in G.nodes:
-    lab += [G.nodes[node]['value']]
-
-lab = np.array(lab)
-
-m = lsbm.lsbm_gibbs(X=X[:,:2], K=2, W_function=fW)
-m.initialise(z=KMeans(n_clusters=m.K).fit_predict(m.X), theta=(np.abs(m.X[:,0])+np.random.normal(size=m.n,scale=0.000001)), 
-                            Lambda_0=1/m.n, g_prior=False, b_0=0.01)
-q = m.mcmc(samples=1000, burn=0, sigma_prop=0.1, thinning=1)
-
-## Posterior similarity matrix
-psm = np.zeros((m.n,m.n))
-for i in range(q[1].shape[2]):
-    psm += np.equal.outer(q[1][:,0,i],q[1][:,0,i])
-
-psm /= q[1].shape[2]
-
-## Hierarchical clustering
-from sklearn.cluster import AgglomerativeClustering
-cluster_model = AgglomerativeClustering(n_clusters=m.K, affinity='precomputed', linkage='average') 
-clust = cluster_model.fit_predict(1-psm)
-
-map_est = m.map(z=clust, theta=q[0][:,0].mean(axis=1))
-
-plt.scatter(m.X[:,0],m.X[:,1],c=clust)
-plt.plot(np.linspace(np.min(m.X[:,0]),0,200), [np.dot(map_est[0][1][0],m.fW[1](x)) for x in np.linspace(np.min(m.X[:,0]),0,200)])
-plt.plot(np.linspace(np.max(m.X[:,0]),0,200), [np.dot(map_est[0][1][1],m.fW[1](x)) for x in np.linspace(np.min(m.X[:,0]),0,200)])
-plt.show()
-
-import pandas as pd
-pd.crosstab(clust, lab)
-
-import matplotlib.pyplot as plt
-plt.scatter(X[:,0],X[:,1],c=clust)
-plt.show()
-
-plt.plot(q[1][:,:,0].T)
 plt.show()

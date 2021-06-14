@@ -51,4 +51,15 @@ In the class `lsbm_gibbs`, the function `initialise` requires an additional para
 Finally, the MCMC sampler could be run, specifying the number of samples `samples`, the burn-in length `burn`, the variance <img src="svgs/c9a0d0588fefccf1db3256d9740bc884.svg?invert_in_darkmode" align=middle width=35.60329409999999pt height=26.76175259999998pt/> of the proposal distribution for <img src="svgs/27e556cf3caa0673ac49a8f0de3c73ca.svg?invert_in_darkmode" align=middle width=8.17352744999999pt height=22.831056599999986pt/>, denoted `sigma_prop`, and the integer parameter `thinning`. The MCMC sampler retains only samples indexed by multiples of `thinning`. 
 ```python3
 q = m.mcmc(samples=10000, burn=1000, sigma_prop=0.5, thinning=1)
+
 ```
+
+## Reproducing the results in the paper
+
+The figures in the paper could be reproduced using the following files:
+- Figure 1: `sim_pictures_intro.py`;
+- Figure 3: `sim_pictures.py`;
+- Figures 4 and 5: `sim.py`;
+- Figure 6: `harry_potter.py`.
+
+For security reasons, the ICL network data have *not* been made available, but the code to run the quadratic model and truncated power basis spline model are available in `icl.py`. Similarly, `icl_gp.py` reproduces the same models under an explicit Gaussian process setting.
