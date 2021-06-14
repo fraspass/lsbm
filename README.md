@@ -24,6 +24,7 @@ for k in range(K):
     for j in range(1,d):
         phi[k,j] = lambda theta: np.array([theta ** 2, theta])
 
+m = lsbm.lsbm_gibbs(X=X, K=K, W_function=phi)
 ```
 
 Defining the kernels requires a bit more effort. Using the dictionary `phi` defined in the previous code snippet, the corresponding kernels - assuming prior scale matrices `Delta` for the NIG prior - are: 
@@ -33,6 +34,8 @@ for k in range(K):
     csi[k,0] = lambda theta,theta_prime: Delta[k,0] * np.matmul(phi[k,0](theta).reshape(-1,1),phi[k,0](theta_prime).reshape(1,-1)) 
     for j in range(1,d):
         csi[k,j] = lambda theta,theta_prime: np.matmul(np.matmul(phi[k,j](theta),Delta[k,j]),np.transpose(phi[k,j](theta_prime)))
+
+m = lsbm_gp.lsbm_gp_gibbs(X=X, K=K, csi=csi)
 ```
 
 Note that the kernel functions in `csi` must be flexible enough to handle correctly four types of input - `(float,float)`, `(float,vector)`, `(vector,float)`, `(vector,vector)` -, returning appropriate objects - `float`, `vector` or `matrix` - in each of the four circumstances. 
