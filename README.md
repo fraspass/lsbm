@@ -26,7 +26,7 @@ for k in range(K):
 
 ```
 
-Defining the kernels requires a bit more effort. Using the dictionary `phi` defined in the previous code snippet, the corresponding kernels -- assuming prior scale matrices `Delta` for the NIG prior -- are: 
+Defining the kernels requires a bit more effort. Using the dictionary `phi` defined in the previous code snippet, the corresponding kernels - assuming prior scale matrices `Delta` for the NIG prior - are: 
 ```python3
 csi = {}
 for k in range(K):
@@ -35,4 +35,4 @@ for k in range(K):
         csi[k,j] = lambda theta,theta_prime: np.matmul(np.matmul(phi[k,j](theta),Delta[k,j]),np.transpose(phi[k,j](theta_prime)))
 ```
 
-Note that the kernel functions in `csi` must be flexible enough to handle correctly four types of input -- `(float,float)`, `(float,vector)`, `(vector,float)`, `(vector,vector)` --, returning appropriate objects -- `float`, `vector` or `matrix` -- in each of the four circumstances. 
+Note that the kernel functions in `csi` must be flexible enough to handle correctly four types of input - `(float,float)`, `(float,vector)`, `(vector,float)`, `(vector,vector)` -, returning appropriate objects - `float`, `vector` or `matrix` - in each of the four circumstances. 
