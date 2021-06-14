@@ -11,4 +11,5 @@ The main tool for inference on LSBMs is the MCMC sampler `lsbm_gp_gibbs` contain
 
 Additionally, the file `lsbm.py` contains a simplified class `lsbm_gibbs` which can be used for models where the kernel functions are assumed to be *inner products*. The latent functions in such models can be expressed in the form <img src="svgs/a47365b803cbfbae589ba00d757323c3.svg?invert_in_darkmode" align=middle width=181.69460429999998pt height=24.65753399999998pt/>, for basis functions <img src="svgs/166782492ccc9f0344cf301c405ca9fd.svg?invert_in_darkmode" align=middle width=96.20125349999998pt height=22.831056599999986pt/> and corresponding weights <img src="svgs/5628dabe825c1081c1d0ab40cb139570.svg?invert_in_darkmode" align=middle width=85.20361904999999pt height=22.648391699999998pt/> with joint normal-inverse-gamma prior with the variance parameter: 
 <p align="center"><img src="svgs/b2769a868c59cee2f9ae9803842a9a1a.svg?invert_in_darkmode" align=middle width=230.74284915pt height=20.50407645pt/></p>
+
 In this case, the class `lsbm` does *not* require a dictionary of kernel functions for initialisation, but a dictionary `W_function` containing the basis functions. 
