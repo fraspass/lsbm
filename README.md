@@ -46,9 +46,9 @@ m.initialise(z=np.random.choice(m.K,size=m.n), theta=X[:,0]+np.random.normal(siz
                             mu_theta=X[:,0].mean(), sigma_theta=10, a_0=1, b_0=0.01, first_linear=True)
 ```
 
-In the class `lsbm_gibbs`, the function `initialise` requires an additional parameter `Lambda_0`, representing the scale parameter for the Zeller's prior scale matrix <img src="svgs/3ddfdf40fa6d2470aa603ad1a400284c.svg?invert_in_darkmode" align=middle width=204.52633739999996pt height=26.76175259999998pt/>. 
+In the class `lsbm_gibbs`, the function `initialise` requires an additional parameter `Lambda_0`, representing the scale parameter for the Zeller's prior scale matrix <img src="svgs/52cd8b69153b0a350d0156129053ee04.svg?invert_in_darkmode" align=middle width=204.7545456pt height=26.76175259999998pt/>.
 
-Finally, the MCMC sampler could be run, specifying the number of samples `samples`, the burn-in length `burn`, the variance <img src="svgs/c9a0d0588fefccf1db3256d9740bc884.svg?invert_in_darkmode" align=middle width=35.60329409999999pt height=26.76175259999998pt/> of the proposal distribution for <img src="svgs/27e556cf3caa0673ac49a8f0de3c73ca.svg?invert_in_darkmode" align=middle width=8.17352744999999pt height=22.831056599999986pt/>, denoted `sigma_prop`, and the parameter `thinning`. For `thinning=`<img src="svgs/4f4f4e395762a3af4575de74c019ebb5.svg?invert_in_darkmode" align=middle width=5.936097749999991pt height=20.221802699999984pt/>, the MCMC sampler retains only samples indexed by multiples of <img src="svgs/4f4f4e395762a3af4575de74c019ebb5.svg?invert_in_darkmode" align=middle width=5.936097749999991pt height=20.221802699999984pt/>. 
+Finally, the MCMC sampler could be run, specifying the number of samples `samples`, the burn-in length `burn`, the variance <img src="svgs/c9a0d0588fefccf1db3256d9740bc884.svg?invert_in_darkmode" align=middle width=35.60329409999999pt height=26.76175259999998pt/> of the proposal distribution for <img src="svgs/27e556cf3caa0673ac49a8f0de3c73ca.svg?invert_in_darkmode" align=middle width=8.17352744999999pt height=22.831056599999986pt/>, denoted `sigma_prop`, and the integer parameter `thinning`. The MCMC sampler retains only samples indexed by multiples of `thinning`. 
 ```python3
 q = m.mcmc(samples=10000, burn=1000, sigma_prop=0.5, thinning=1)
 ```
