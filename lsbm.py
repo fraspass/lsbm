@@ -8,9 +8,9 @@ from scipy.stats import dirichlet as Diri
 from scipy.special import logit, expit, logsumexp, loggamma
 from scipy.stats import t
 
-###########################
-### Quadratic embedding ###
-###########################
+################################################################################
+### LSBM embeddings with weighted inner product of basis functions GP kernel ###
+################################################################################
 
 class lsbm_gibbs:
 
