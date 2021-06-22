@@ -273,13 +273,13 @@ class lsbm_gibbs:
     def marginal_loglikelihood(self):
         loglik = 0
         for k in range(self.K):
-            loglik -= self.d * self.nk[k]/2 * np.log(2*np.pi) 
+            loglik -= self.d * self.nk[k] / 2 * np.log(2*np.pi) 
             loglik += self.d * (self.a0 * np.log(self.b0) - loggamma(self.a0))
             for j in range(self.d):
                 if j == 0 and self.first_linear[k]:
                     loglik -= self.a[k] * np.log(self.b[j][k])
                 else:
-                    loglik += np.sqrt(np.linalg.det(self.Lambda[j][k])) - self.a[k] * np.log(self.b[j][k]) - np.sqrt(np.linalg.det(self.Lambda0[k,j]))
+                    loglik += np.prod(np.linalg.slogdet(self.Lambda[j][k])) / 2 - self.a[k] * np.log(self.b[j][k]) - np.prod(np.linalg.slogdet(self.Lambda0[k,j])) / 2
         return loglik
 
     ###################################################################################
