@@ -31,11 +31,17 @@ class lsbm_gibbs:
         if np.min(self.z) == 1:
             self.z -= 1
         self.theta = theta
+        ## Set up first_linear
+        if isinstance(first_linear,bool):
+            self.first_linear = self.K * [first_linear]
+        else:
+            self.first_linear = first_linear
+            if np.sum([isinstance(first_linear[k],bool) for k in first_linear]) != self.K:
+                raise ValueError('first_linear is either a boolean or a K-vector of booleans')
         ## Theta hyperparameters
         self.mu_theta = mu_theta
         self.sigma_theta = sigma_theta
         ## Basis functions
-        self.first_linear = first_linear
         self.g_prior = g_prior
         self.W = {}
         for j in range(self.d):
@@ -70,7 +76,7 @@ class lsbm_gibbs:
                 X = self.X[self.z == k][:,j]
                 if j in self.fixed_function:
                     X -= self.fixed_W[j][self.z == k]
-                if j == 0 and self.first_linear:
+                if j == 0 and self.first_linear[k]:
                     self.b[j][k] = self.b0 + np.sum((X - self.theta[self.z == k]) ** 2) / 2
                 else:
                     W = self.W[k,j][self.z == k]
@@ -100,7 +106,7 @@ class lsbm_gibbs:
                 position[j] = self.X[i,j]
                 if j in self.fixed_function:
                     position[j] -= self.fixed_W[j][i]
-                if j == 0 and self.first_linear:
+                if j == 0 and self.first_linear[zold]:
                     b_old[j] = float(np.copy(self.b[j][zold]))
                     self.b[j][zold] -= (position[j] - self.theta[i]) ** 2 / 2
                 else:
@@ -121,7 +127,7 @@ class lsbm_gibbs:
             community_probs = np.log((np.array([self.nk[k] for k in range(self.K)]) + self.nu/self.K) / (self.n - 1 + self.K))
             for k in range(self.K):
                 for j in range(self.d):
-                    if j == 0 and self.first_linear:
+                    if j == 0 and self.first_linear[k]:
                         community_probs[k] += t.logpdf(position[j], df=2*self.a[k], loc=self.theta[i], scale=np.sqrt(self.b[j][k] / self.a[k])) 
                     else:
                         community_probs[k] += t.logpdf(position[j], df=2*self.a[k], loc=np.dot(self.W[k,j][i],self.mu[j][k]), 
@@ -140,7 +146,7 @@ class lsbm_gibbs:
                 ## Re-update to old values
                 for j in range(self.d):
                     self.b[j][znew] = b_old[j]
-                    if not (j == 0 and self.first_linear):
+                    if not (j == 0 and self.first_linear[znew]):
                         self.WtW[j][znew] = WtW_old[j]
                         self.WtX[j][znew] = WtX_old[j]
                         self.Lambda_inv[j][znew] = Lambda_inv_old[j]
@@ -149,7 +155,7 @@ class lsbm_gibbs:
             else:
                 ## Update to new values
                 for j in range(self.d):
-                    if j == 0 and self.first_linear:
+                    if j == 0 and self.first_linear[znew]:
                         self.b[j][znew] += (position[j] - self.theta[i]) ** 2 / 2
                     else:
                         self.b[j][znew] += np.dot(self.mu[j][znew].T,np.dot(self.Lambda_inv[j][znew],self.mu[j][znew])) / 2 
@@ -182,7 +188,7 @@ class lsbm_gibbs:
                 position[j] = self.X[i,j]
                 if j in self.fixed_function:
                     position[j] -= self.fixed_W[j][i]
-                if j == 0 and self.first_linear:
+                if j == 0 and self.first_linear[zold]:
                     b_old[j] = float(np.copy(self.b[j][zold]))
                     self.b[j][zold] -= (position[j] - theta_old) ** 2 / 2
                 else:
@@ -211,14 +217,14 @@ class lsbm_gibbs:
             ## Calculate acceptance ratio
             numerator_accept = norm.logpdf(theta_prop,loc=self.mu_theta,scale=self.sigma_theta)
             for j in range(self.d):
-                if j == 0 and self.first_linear:
+                if j == 0 and self.first_linear[zold]:
                     numerator_accept += t.logpdf(position_prop[j], df=2*self.a[zold], loc=theta_prop, scale=np.sqrt(self.b[j][zold] / self.a[zold])) 
                 else:
                     numerator_accept += t.logpdf(position_prop[j], df=2*self.a[zold], loc=np.dot(W_prop[zold,j],self.mu[j][zold]), 
                             scale=np.sqrt(self.b[j][zold] / self.a[zold] * (1 + np.dot(W_prop[zold,j].T, np.dot(self.Lambda[j][zold], W_prop[zold,j])))))
             denominator_accept = norm.logpdf(theta_old,loc=self.mu_theta,scale=self.sigma_theta)
             for j in range(self.d):
-                if j == 0 and self.first_linear:
+                if j == 0 and self.first_linear[zold]:
                     denominator_accept += t.logpdf(position[j], df=2*self.a[zold], loc=theta_old, scale=np.sqrt(self.b[j][zold] / self.a[zold])) 
                 else:
                     denominator_accept += t.logpdf(position[j], df=2*self.a[zold], loc=np.dot(self.W[zold,j][i],self.mu[j][zold]), 
@@ -235,7 +241,7 @@ class lsbm_gibbs:
                 ## Re-update to old values
                 for j in range(self.d):
                     self.b[j][zold] = b_old[j]
-                    if not (j == 0 and self.first_linear):
+                    if not (j == 0 and self.first_linear[zold]):
                         self.WtW[j][zold] = WtW_old[j]
                         self.WtX[j][zold] = WtX_old[j]
                         self.Lambda_inv[j][zold] = Lambda_inv_old[j]
@@ -249,7 +255,7 @@ class lsbm_gibbs:
                         self.W[k,j][i] = W_prop[k,j]
                     if j in self.fixed_function:
                         self.fixed_W[j][i] = W_prop_fixed[j]
-                    if j == 0 and self.first_linear:
+                    if j == 0 and self.first_linear[zold]:
                         self.b[j][zold] += (position[j] - self.theta[i]) ** 2 / 2
                     else:
                         self.b[j][zold] += np.dot(self.mu[j][zold].T,np.dot(self.Lambda_inv[j][zold],self.mu[j][zold])) / 2 
@@ -270,10 +276,10 @@ class lsbm_gibbs:
             loglik -= self.d * self.nk[k]/2 * np.log(2*np.pi) 
             loglik += self.d * (self.a0 * np.log(self.b0) - loggamma(self.a0))
             for j in range(self.d):
-                if j == 0 and self.first_linear:
+                if j == 0 and self.first_linear[k]:
                     loglik -= self.a[k] * np.log(self.b[j][k])
                 else:
-                    loglik += np.sqrt(np.linalg.det(self.Lambda[j][k])) - self.a[k] * np.log(self.b[j][k]) - np.sqrt(np.linalg.det(self.Lambda0[j]))
+                    loglik += np.sqrt(np.linalg.det(self.Lambda[j][k])) - self.a[k] * np.log(self.b[j][k]) - np.sqrt(np.linalg.det(self.Lambda0[k,j]))
         return loglik
 
     ###################################################################################
@@ -292,40 +298,16 @@ class lsbm_gibbs:
         for i in range(len(range_values)):
             x = range_values[i]
             for j in range(mm.d):
-                W[j] = mm.fW[j](x)
                 for k in range(mm.K):
-                    if j == 0 and mm.first_linear:
+                    if j == 0 and mm.first_linear[k]:
                         mean[k,j][i] = x
                         confint[k,j][i] = t.interval(0.95, df=2*mm.a[k], loc=x, scale=np.sqrt(mm.b[j][k] / mm.a[k])) 
                     else:
-                        mean[k,j][i] = np.dot(W[j],mm.mu[j][k])
+                        W[k,j] = mm.fW[k,j](x)
+                        mean[k,j][i] = np.dot(W[k,j],mm.mu[j][k])
                         confint[k,j][i] = t.interval(0.95, df=2*mm.a[k], loc=mean[k,j][i], 
-                                scale=np.sqrt(mm.b[j][k] / mm.a[k] * (1 + np.dot(W[j].T, np.dot(mm.Lambda[j][k], W[j])))))
+                                scale=np.sqrt(mm.b[j][k] / mm.a[k] * (1 + np.dot(W[k,j].T, np.dot(mm.Lambda[j][k], W[k,j])))))
         return mean, confint, mm.mu, mm.marginal_loglikelihood()
-
-    def bootstrapped_ci(self,z,theta,boot_samples=150):
-        boot_mu = {}
-        for j in range(self.d):
-            boot_mu[j] = {}
-            if not (j == 0 and self.first_linear):
-                for k in range(self.K):
-                    boot_mu[j][k] = np.zeros((boot_samples,len(self.mu[j][k])))
-        for b in range(boot_samples):
-            Xboot = np.copy(self.X)
-            thetaboot = np.copy(theta)
-            for k in range(self.K):
-                posk = np.where(z == k)[0]
-                boot = np.random.choice(posk, size=len(posk), replace=True)
-                thetaboot[posk] = theta[boot]
-                Xboot[posk] = self.X[boot]
-            mm = lsbm_gibbs(X=Xboot, K=self.K, W_function=self.fW, fixed_function=self.fixed_W)
-            mm.initialise(z=z, theta=thetaboot, Lambda_0=self.lambda_coef, a_0=self.a0, b_0=self.b0, nu=self.nu, 
-                        g_prior=self.g_prior, first_linear=self.first_linear)
-            for j in range(self.d):
-                if not (j == 0 and self.first_linear):
-                    for k in range(self.K):
-                        boot_mu[j][k][b] = mm.mu[j][k]
-        return boot_mu
 
     #####################
     ### MCMC sampling ###

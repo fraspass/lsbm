@@ -57,8 +57,14 @@ class lsbm_gp_gibbs:
         ## Theta hyperparameters
         self.mu_theta = mu_theta
         self.sigma_theta = sigma_theta
-        ## Basis functions
-        self.first_linear = first_linear
+        ## Set up first_linear
+        if isinstance(first_linear,bool):
+            self.first_linear = self.K * [first_linear]
+        else:
+            self.first_linear = first_linear
+            if np.sum([isinstance(first_linear[k],bool) for k in first_linear]) != self.K:
+                raise ValueError('first_linear is either a boolean or a K-vector of booleans')
+        ## Fixed basis functions
         self.fixed_W = {}
         for j in self.fixed_function:
             self.fixed_W[j] = np.array([self.fixed_function[j](self.theta[i]) for i in range(self.n)])[:,0] ## rewrite using only one coefficient (1)
@@ -81,7 +87,7 @@ class lsbm_gp_gibbs:
                 X = self.X[self.z == k][:,j]
                 if j in self.fixed_function:
                     X -= self.fixed_W[j][self.z == k]
-                if j == 0 and self.first_linear:
+                if j == 0 and self.first_linear[k]:
                     self.b[j][k] = self.b0 + np.sum((X - self.theta[self.z == k]) ** 2) / 2
                 else:
                     self.Csi_I[k,j] = np.linalg.inv(self.csi[k,j](self.theta_groups[k],self.theta_groups[k]) + np.diag(np.ones(self.nk[k])))
@@ -114,7 +120,7 @@ class lsbm_gp_gibbs:
             for j in range(self.d):
                 if j in self.fixed_function:
                     position[j] -= self.fixed_W[j][i]
-                if j == 0 and self.first_linear:
+                if j == 0 and self.first_linear[zold]:
                     b_old[j] = float(np.copy(self.b[j][zold]))
                     self.b[j][zold] -= (position[j] - thetai) ** 2 / 2
                 else:
@@ -132,7 +138,7 @@ class lsbm_gp_gibbs:
             community_probs = np.log((np.array([self.nk[k] for k in range(self.K)]) + self.nu/self.K) / (self.n - 1 + self.K))
             for k in range(self.K):
                 for j in range(self.d):
-                    if j == 0 and self.first_linear:
+                    if j == 0 and self.first_linear[k]:
                         community_probs[k] += t.logpdf(position[j], df=2*self.a[k], loc=thetai, scale=np.sqrt(self.b[j][k] / self.a[k])) 
                     else:   
                         csi_left = self.csi[k,j](thetai, self.theta_groups[k])
@@ -159,13 +165,13 @@ class lsbm_gp_gibbs:
                 ## Re-update to old values
                 for j in range(self.d):
                     self.b[j][znew] = b_old[j]
-                    if not (j == 0 and self.first_linear):
+                    if not (j == 0 and self.first_linear[znew]):
                         self.Csi_I[znew,j] = Csi_I_Old[j]
                         self.X_Csi_X[znew,j] = X_Csi_X_Old[j]
             else:
                 ## Update to new values
                 for j in range(self.d):
-                    if j == 0 and self.first_linear:
+                    if j == 0 and self.first_linear[znew]:
                         self.b[j][znew] += (position[j] - self.theta[i]) ** 2 / 2
                     else:
                         add_row = self.csi[znew,j](self.theta[i],self.theta_groups[znew])
@@ -199,7 +205,7 @@ class lsbm_gp_gibbs:
             for j in range(self.d):
                 if j in self.fixed_function:
                     position[j] -= self.fixed_W[j][i]
-                if j == 0 and self.first_linear:
+                if j == 0 and self.first_linear[zold]:
                     b_old[j] = float(np.copy(self.b[j][zold]))
                     self.b[j][zold] -= (position[j] - theta_old) ** 2 / 2
                 else:
@@ -223,7 +229,7 @@ class lsbm_gp_gibbs:
                 ## Update to new values
                 for j in range(self.d):
                     b_prop[j] = self.b0
-                    if j == 0 and self.first_linear:
+                    if j == 0 and self.first_linear[zold]:
                         b_prop[j] += (position_prop[j] - theta_prop) ** 2 / 2
                     else:
                         tz = np.copy(self.theta_groups[zold])
@@ -236,7 +242,7 @@ class lsbm_gp_gibbs:
             ## Calculate acceptance ratio
             numerator_accept = norm.logpdf(theta_prop,loc=self.mu_theta,scale=self.sigma_theta)
             for j in range(self.d):
-                if j == 0 and self.first_linear:
+                if j == 0 and self.first_linear[zold]:
                     numerator_accept += t.logpdf(position_prop[j], df=2*self.a[zold], loc=theta_prop, scale=np.sqrt(self.b[j][zold] / self.a[zold])) 
                 else:
                     csi_left = self.csi[zold,j](theta_prop, np.delete(self.theta_groups[zold], obj=indi))
@@ -247,7 +253,7 @@ class lsbm_gp_gibbs:
                             scale=np.sqrt(self.b[j][zold] / self.a[zold] * (1 + csi_star)))
             denominator_accept = norm.logpdf(theta_old,loc=self.mu_theta,scale=self.sigma_theta)
             for j in range(self.d):
-                if j == 0 and self.first_linear:
+                if j == 0 and self.first_linear[zold]:
                     denominator_accept += t.logpdf(position[j], df=2*self.a[zold], loc=theta_old, scale=np.sqrt(self.b[j][zold] / self.a[zold])) 
                 else:
                     csi_left = self.csi[zold,j](theta_old, np.delete(self.theta_groups[zold], obj=indi))
@@ -269,14 +275,14 @@ class lsbm_gp_gibbs:
                 ## Re-update to old values
                 for j in range(self.d):
                     self.b[j][zold] = b_old[j]
-                    if not (j == 0 and self.first_linear):
+                    if not (j == 0 and self.first_linear[zold]):
                         self.Csi_I[zold,j] = Csi_I_Old[j]
                         self.X_Csi_X[zold,j] = X_Csi_X_Old[j]
             else:
                 ## Update to new values
                 for j in range(self.d):
                     self.b[j][zold] = b_prop[j]
-                    if not (j == 0 and self.first_linear):
+                    if not (j == 0 and self.first_linear[zold]):
                         self.Csi_I[zold,j] = Csi_I_Prop[j]
                         self.X_Csi_X[zold,j] = X_Csi_X_Prop[j]
         return None
@@ -292,13 +298,13 @@ class lsbm_gp_gibbs:
             for k in range(mm.K):
                 mean[k,j] = np.zeros(len(range_values))
                 confint[k,j] = np.zeros((len(range_values),2))
-                if not (j == 0 and mm.first_linear):
+                if not (j == 0 and mm.first_linear[k]):
                     Csi_X[k,j] = np.matmul(mm.Csi_I[k,j], mm.X_groups[k][:,j])
         for i in range(len(range_values)):
             x = range_values[i]
             for j in range(mm.d):
                 for k in range(mm.K):
-                    if j == 0 and mm.first_linear:
+                    if j == 0 and mm.first_linear[k]:
                         mean[k,j][i] = x
                         confint[k,j][i] = t.interval(0.95, df=2*mm.a[k], loc=x, scale=np.sqrt(mm.b[j][k] / mm.a[k])) 
                     else:

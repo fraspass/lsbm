@@ -13,9 +13,6 @@ from matplotlib import rc
 rc('font',**{'family':'serif','serif':['Times']})
 rc('text', usetex=True)
 
-def relu(x):
-    return x * (x > 0)
-
 X = np.load('Data/X_icl2.npy')[:,:5]
 lab = np.loadtxt('Data/labs2.csv', dtype=int)
 
@@ -32,6 +29,9 @@ nknots = 3
 mmin = np.min(X,axis=0)[0]
 mmax = np.max(X,axis=0)[0]
 knots =  np.linspace(start=mmin,stop=mmax,num=nknots+2)[1:-1]
+
+def relu(x):
+    return x * (x > 0)
 
 for k in range(4):
     fW[k,0] = lambda x: np.array([x])
