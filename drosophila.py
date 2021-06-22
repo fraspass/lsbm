@@ -2,6 +2,7 @@
 import numpy as np
 from sklearn.metrics import adjusted_rand_score as ari
 import lsbm
+from utilities import marginal_likelihood_relabeler, relu
 from sklearn.preprocessing import LabelEncoder as labeler
 
 import matplotlib.pyplot as plt
@@ -15,9 +16,6 @@ lab = labeler().fit(lab).transform(lab)
 ## Import embeddings
 X = np.loadtxt('Data/drosophila_dase.csv', delimiter=',')
 
-def relu(x):
-    return x * (x > 0)
-
 ## Truncated power splines
 knots = {}
 nknots = 3
@@ -30,7 +28,7 @@ for k in range(4):
     fW[k,0] = lambda x: np.array([x])
     for j in range(1,6):
         if k == 0:
-            fW[k,j] = lambda x: np.array([x, x ** 2, x ** 3] + [relu(knot - x) ** 3 for knot in knots])
+            fW[k,j] = lambda x: np.array([x, x ** 2, x ** 3]+ [relu(knot - x) ** 3 for knot in knots])
         elif k == 1:
             if j == 5:
                 fW[k,j] = lambda x: np.array([1,x])
@@ -58,17 +56,21 @@ z_init[np.where(z_init == 6)[0]] = 0
 z_init[np.where(z_init == 3)[0]] = 0
 z_init[np.where(z_init == 4)[0]] = 0
 z_init[np.where(z_init == 5)[0]] = 3
-z_init[np.where(z_init == 2)[0]] = -1
-z_init[np.where(z_init == 1)[0]] = 2
-z_init[np.where(z_init == -1)[0]] = 1
-z_init[np.where(z_init == 3)[0]] = -1
-z_init[np.where(z_init == 1)[0]] = 3
-z_init[np.where(z_init == -1)[0]] = 1
+## Lazy relabelling
+#z_init[np.where(z_init == 2)[0]] = -1
+#z_init[np.where(z_init == 1)[0]] = 2
+#z_init[np.where(z_init == -1)[0]] = 1
+#z_init[np.where(z_init == 3)[0]] = -1
+#z_init[np.where(z_init == 1)[0]] = 3
+#z_init[np.where(z_init == -1)[0]] = 1
+
+## Relabelling using marginal likelihoods
+z_optim = marginal_likelihood_relabeler(z_init=z_init, m=m)
 
 ## Initialise model
 np.random.seed(111)
-m.initialise(z=np.copy(z_init), theta=X[:,0]+np.random.normal(size=m.n,scale=0.01), 
-                            Lambda_0=(1/m.n)**2, mu_theta=X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=True)
+m.initialise(z=np.copy(z_optim), theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01), 
+                            Lambda_0=(1/m.n)**2, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=True)
 ## Run the sampler
 np.random.seed(111)
 q = m.mcmc(samples=1000, burn=10, sigma_prop=0.05, thinning=1)
@@ -144,10 +146,12 @@ np.random.seed(111)
 ## Initialisation - For simplicity, here it is initialised from the truth
 ## When running this code on real data, this could be initialised from k-means
 ## IMPORTANT: Label 0 MUST correspond to 'quadratic' community (at least some elements of it)! 
+## Relabelling using marginal likelihoods
+z_optim = marginal_likelihood_relabeler(z_init=z_init, m=m, first_linear=[True,False,False,False])
 
 ## Initialise model
 np.random.seed(111)
-m.initialise(z=np.copy(z_init), theta=X[:,0]+np.random.normal(size=m.n,scale=0.01), 
+m.initialise(z=max_init, theta=X[:,0]+np.random.normal(size=m.n,scale=0.01), 
                             Lambda_0=(1/m.n)**2, mu_theta=X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=[True,False,False,False])
 ## Run the sampler
 np.random.seed(111)
