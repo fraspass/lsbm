@@ -80,7 +80,7 @@ def lighten_color(color, amount=0.5):
     c = colorsys.rgb_to_hls(*mc.to_rgb(c))
     return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
 
-## Relabel based on 
+## Relabel two vectors such that the number of mismatches is minimised
 def relabel_matching(v1, v2):
     import numpy as np
     import pandas as pd
