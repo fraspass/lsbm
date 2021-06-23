@@ -6,9 +6,9 @@ from utilities import *
 from sklearn.preprocessing import LabelEncoder as labeler
 
 import matplotlib.pyplot as plt
-from matplotlib import rc
-rc('font',**{'family':'serif','serif':['Times']})
-rc('text', usetex=True)
+#from matplotlib import rc
+#rc('font',**{'family':'serif','serif':['Times']})
+#rc('text', usetex=True)
 
 ## Number of samples
 M = 10000
@@ -104,8 +104,8 @@ for j in range(1,m.d):
         pos_max = np.searchsorted(xx,np.max(X[:,0][ix2])) + 1
         plt.scatter(X[:,0][ix], X[:,j][ix], c=cdict[g], label = group[g], marker=mms[g], edgecolor='black', linewidth=0.3)
         plt.plot(v[0][g,0][pos_min:pos_max], v[0][g,j][pos_min:pos_max], c=cdict[g])
-    plt.xlabel('$$\\hat{\\mathbf{Y}}_1$$')
-    plt.ylabel('$$\\hat{\\mathbf{Y}}_'+str(j+1)+'$$')
+    #plt.xlabel('$$\\hat{\\mathbf{Y}}_1$$')
+    #plt.ylabel('$$\\hat{\\mathbf{Y}}_'+str(j+1)+'$$')
     plt.legend()
     plt.savefig('Drosophila/droso_1'+str(j+1)+'.pdf',bbox_inches='tight')
     plt.show(block=False); plt.clf(); plt.cla(); plt.close()
@@ -168,8 +168,8 @@ for j in range(1,6):
             plt.scatter(v[0][g,0][pos_min], v[0][g,j][pos_min], c = 'black', marker='X', label='Community centers')
         else:
             plt.scatter(v[0][g,0][pos_min], v[0][g,j][pos_min], c = 'black', marker='X')
-    plt.xlabel('$$\\hat{\\mathbf{Y}}_1$$')
-    plt.ylabel('$$\\hat{\\mathbf{Y}}_'+str(j+1)+'$$')
+    #plt.xlabel('$$\\hat{\\mathbf{Y}}_1$$')
+    #plt.ylabel('$$\\hat{\\mathbf{Y}}_'+str(j+1)+'$$')
     plt.legend()
     plt.savefig('Drosophila/droso_priebe_1'+str(j+1)+'.pdf',bbox_inches='tight')
     plt.show(block=False); plt.clf(); plt.cla(); plt.close()

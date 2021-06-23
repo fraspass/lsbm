@@ -6,9 +6,9 @@ import lsbm
 from utilities import *
 
 import matplotlib.pyplot as plt
-from matplotlib import rc
-rc('font',**{'family':'serif','serif':['Times']})
-rc('text', usetex=True)
+#from matplotlib import rc
+#rc('font',**{'family':'serif','serif':['Times']})
+#rc('text', usetex=True)
 
 ## Number of samples
 M = 10000
@@ -57,8 +57,8 @@ for j in range(1,m.d):
         ix2 = np.where(clust == g)
         plt.scatter(m.X[:,0][ix], m.X[:,j][ix], c=cdict[g], label=group[g], marker=mms[g], edgecolor='black', linewidth=0.3)
         plt.plot(v[0][g,0], v[0][g,j], c=cdict[g])
-    plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
-    plt.ylabel('$$\\hat{\\mathbf{X}}_'+str(j+1)+'$$')
+    #plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
+    #plt.ylabel('$$\\hat{\\mathbf{X}}_'+str(j+1)+'$$')
     plt.legend()
     plt.savefig('ICL/icl_1'+str(j+1)+'.pdf',bbox_inches='tight')
     plt.show(block=False); plt.clf(); plt.cla(); plt.close()
@@ -105,8 +105,8 @@ for j in range(1,m.d):
         ix2 = np.where(clust == g)
         plt.scatter(m.X[:,0][ix], m.X[:,j][ix], c=cdict[g], label=group[g], marker=mms[g], edgecolor='black', linewidth=0.3)
         plt.plot(v[0][g,0], v[0][g,j], c=cdict[g])
-    plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
-    plt.ylabel('$$\\hat{\\mathbf{X}}_'+str(j+1)+'$$')
+    #plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
+    #plt.ylabel('$$\\hat{\\mathbf{X}}_'+str(j+1)+'$$')
     plt.legend()
     plt.savefig('ICL/icl_splines_1'+str(j+1)+'.pdf',bbox_inches='tight')
     plt.show(block=False); plt.clf(); plt.cla(); plt.close()
