@@ -67,7 +67,7 @@ ari(z_optim, lab)
 ## Initialise model
 np.random.seed(111)
 m.initialise(z=np.copy(z_optim), theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01), 
-                            Lambda_0=(1/m.n)**2, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=True)
+                            Lambda_0=1/m.n, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=True)
 ## Run the sampler
 np.random.seed(111)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.05, thinning=1)
@@ -131,7 +131,7 @@ z_optim, perm_optim = marginal_likelihood_relabeler(z_init=z_init, m=m, first_li
 ## Initialise model
 np.random.seed(111)
 m.initialise(z=z_optim, theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01), 
-                            Lambda_0=(1/m.n)**2, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=[True,False,False,False])
+                            Lambda_0=1/m.n, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=[True,False,False,False])
 ## Run the sampler
 np.random.seed(111)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.05, thinning=1)
