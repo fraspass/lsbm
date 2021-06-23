@@ -11,8 +11,8 @@ import matplotlib.pyplot as plt
 #rc('text', usetex=True)
 
 ## Number of samples 
-M = 100
-B = 10
+M = 10000
+B = 1000
 
 ## Contruct the adjacency matrix
 A = np.zeros((65,65),int)
