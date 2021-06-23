@@ -11,9 +11,9 @@ rc('font',**{'family':'serif','serif':['Times']})
 rc('text', usetex=True)
 
 ## Number of samples
-M = 100
+M = 10000
 ## Burnin
-B = 10
+B = 1000
 
 ## Load data
 X = np.load('Data/X_icl2.npy')[:,:5]
