@@ -12,8 +12,8 @@ import matplotlib.pyplot as plt
 #rc('text', usetex=True)
 
 ## Number of samples
-M = 1000
-B = 100
+M = 10000
+B = 1000
 
 ## Simulate matrix of edge probabilities
 np.random.seed(1771)

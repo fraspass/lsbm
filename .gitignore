@@ -4,5 +4,4 @@
 __pycache__/
 Data/icl*.csv
 Data/pol*
-Data/characters.csv
 Data/lab*.csv
