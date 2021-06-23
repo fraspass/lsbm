@@ -84,6 +84,8 @@ def lighten_color(color, amount=0.5):
 def relabel_matching(v1, v2):
     import numpy as np
     import pandas as pd
+    K1 = int(np.max(v1)); K2 = int(np.max(v2))
+    K = np.max([K1,K2]) + 1
     ## Copy the initial labels
     v2_relabelled = np.copy(v2)
     ## Initialise the quantities of interest (initialisation and best permutation)
@@ -92,7 +94,7 @@ def relabel_matching(v1, v2):
     max_score_diagonal = np.sum(np.diag(pd.crosstab(v1,v2)))
     ## Calculate the possible permutations of the labels
     import itertools
-    perms = list(itertools.permutations(list(range(m.K))))
+    perms = list(itertools.permutations(list(range(K))))
     for perm in perms:
         v2_relabelled = np.array(perm)[v2]
         score_diagonal = np.sum(np.diag(pd.crosstab(v1,v2_relabelled)))

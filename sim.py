@@ -12,8 +12,8 @@ rc('font',**{'family':'serif','serif':['Times']})
 rc('text', usetex=True)
 
 ## Number of samples
-M = 100
-B = 10
+M = 1000
+B = 100
 
 ## Simulate matrix of edge probabilities
 np.random.seed(1771)
@@ -53,7 +53,7 @@ plt.plot(X[z==1,0][uu2], X[z==1,1][uu2], '-', linewidth=3, c='black')
 plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
 plt.ylabel('$$\\hat{\\mathbf{X}}_2$$')
 plt.savefig("Sim/x12_sim.pdf",bbox_inches='tight')
-plt.show()
+plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
 plt.scatter(X_tilde[:,0], X_tilde[:,2], c=np.array(['#009E73','#0072B2'])[z], edgecolor='black',linewidth=0.3)
 uu1 = np.argsort(X[z==0,0])
@@ -63,7 +63,7 @@ plt.plot(X[z==1,0][uu2], X[z==1,2][uu2], '-', linewidth=3, c='black')
 plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
 plt.ylabel('$$\\hat{\\mathbf{X}}_3$$')
 plt.savefig("Sim/x13_sim.pdf",bbox_inches='tight')
-plt.show()
+plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
 plt.scatter(X_tilde[:,1], X_tilde[:,2], c=np.array(['#009E73','#0072B2'])[z], edgecolor='black',linewidth=0.3)
 uu1 = np.argsort(X[z==0,1])
@@ -73,7 +73,7 @@ plt.plot(X[z==1,1][uu2], X[z==1,2][uu2], '-', linewidth=3, c='black')
 plt.xlabel('$$\\hat{\\mathbf{X}}_2$$')
 plt.ylabel('$$\\hat{\\mathbf{X}}_3$$')
 plt.savefig("Sim/x23_sim.pdf",bbox_inches='tight')
-plt.show()
+plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
 ## Setup model and run MCMC
 m = lsbm.lsbm_gibbs(X=X_tilde[:,:3], K=2, W_function=fW, fixed_function={})
@@ -93,19 +93,19 @@ np.save('Sim/ari.npy',a)
 
 ### Plot
 from mpl_toolkits.mplot3d import Axes3D
-xx = np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),250)
+xx = np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),1000)
 ## Calculate MAP for the curves based on the estimated clustering
 v = m.map(z=clust, theta=m.X[:,0], range_values=xx)
 ## Plot
 fig = plt.figure()
 ax = Axes3D(fig)
 ax.scatter(X_tilde[:,0], X_tilde[:,1], X_tilde[:,2], c=np.array(['#009E73','#0072B2'])[z], s=1, alpha=0.75)
-ax.scatter(v[0][0,0], v[0][0,1], v[0][0,2], s=1,c='#009E73')
-ax.scatter(v[0][1,0], v[0][1,1], v[0][1,2], s=1,c='#0072B2')
+ax.scatter(v[0][0,0], v[0][0,1], v[0][0,2], s=1, c='#009E73')
+ax.scatter(v[0][1,0], v[0][1,1], v[0][1,2], s=1, c='#0072B2')
 ax.scatter(X[:,0],X[:,1],X[:,2],s=1,c='black')
 ax.view_init(elev=25, azim=45)
-plt.savefig("Sim_x123_sim.pdf",bbox_inches='tight')
-plt.show()
+plt.savefig("Sim/x123_sim.pdf",bbox_inches='tight')
+plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
 ## Truncated power splines
 knots = {}
@@ -118,3 +118,33 @@ for k in range(2):
     for j in [1,2]:
         fW[k,j] = lambda x: np.array([1, x, x ** 2, x ** 3] + [relu(x - knot) ** 3 for knot in knots])
 
+## Setup model and run MCMC
+m = lsbm.lsbm_gibbs(X=X_tilde[:,:3], K=2, W_function=fW, fixed_function={})
+np.random.seed(171)
+m.initialise(z=np.random.choice(2,size=m.n), theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01), 
+                            Lambda_0=1/m.n, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.01)
+q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
+np.save('Sim/out_splines_theta.npy',q[0])
+np.save('Sim/out_splines_z.npy',q[1])
+
+## Estimate clustering
+clust = estimate_communities(q=q[1],m=m)
+clust = relabel_matching(z, clust)
+## Evaluate adjusted Rand index
+a = ari(clust, z)
+np.save('Sim/ari_splines.npy',a)
+
+### Plot
+xx = np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),1000)
+## Calculate MAP for the curves based on the estimated clustering
+v = m.map(z=clust, theta=m.X[:,0], range_values=xx)
+## Plot
+fig = plt.figure()
+ax = Axes3D(fig)
+ax.scatter(X_tilde[:,0], X_tilde[:,1], X_tilde[:,2], c=np.array(['#009E73','#0072B2'])[z], s=1, alpha=0.75)
+ax.scatter(v[0][0,0], v[0][0,1], v[0][0,2], s=1, c='#009E73')
+ax.scatter(v[0][1,0], v[0][1,1], v[0][1,2], s=1, c='#0072B2')
+ax.scatter(X[:,0],X[:,1],X[:,2],s=1,c='black')
+ax.view_init(elev=25, azim=45)
+plt.savefig("Sim/x123_sim_splines.pdf",bbox_inches='tight')
+plt.show(block=False); plt.clf(); plt.cla(); plt.close()
