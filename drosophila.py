@@ -72,36 +72,38 @@ m.initialise(z=np.copy(z_optim), theta=m.X[:,0]+np.random.normal(size=m.n,scale=
 np.random.seed(111)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.05, thinning=1)
 np.save('Drosophila/out_theta.npy',q[0])
-np.save('Drosophila/out_theta.npy',q[1])
+np.save('Drosophila/out_z.npy',q[1])
 
 ## Estimate clustering
 clust = estimate_communities(q=q[1],m=m)
+clust = relabel_matching(lab, clust)
 ## Evaluate adjusted Rand index
 a1 = ari(clust, lab)
 
 ## Majority rule (label switching appears to be avoided since the functions are different)
 cc = estimate_majority(q[1]) 
+cc = relabel_matching(lab, cc)
 a2 = ari(cc, lab)
 np.save('Drosophila/ari.npy',np.array([a1,a2]))
 
 ### Plots
 xx = np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),250)
 ## Calculate MAP for the curves based on the estimated clustering
-v = m.map(z=cc, theta=X[:,0], range_values=xx)
+v = m.map(z=cc, theta=m.X[:,0], range_values=xx)
 
 ## Plots
 cdict = ['#1E88E5','#FFC107','#D81B60','#23C14B']
 mms = ['o', 'v', 's', 'd']
 group = ['Kenyon Cells','Input Neurons','Output Neurons','Projection Neurons']
 ### Scatterplots
-for j in range(1,6):
-    for g in range(4):
+for j in range(1,m.d):
+    for g in range(m.K):
         ix = np.where(lab == g)
         ix2 = np.where(cc == g)
         pos_min = np.searchsorted(xx,np.min(X[:,0][ix2]))
         pos_max = np.searchsorted(xx,np.max(X[:,0][ix2])) + 1
-        plt.scatter(X[:,0][ix], X[:,j][ix], c = cdict[g], label = group[g], marker=mms[g], edgecolor='black', linewidth=0.3)
-        plt.plot(v[0][g,0][pos_min:pos_max], v[0][g,j][pos_min:pos_max], c = 'black')
+        plt.scatter(X[:,0][ix], X[:,j][ix], c=cdict[g], label = group[g], marker=mms[g], edgecolor='black', linewidth=0.3)
+        plt.plot(v[0][g,0][pos_min:pos_max], v[0][g,j][pos_min:pos_max], c=cdict[g])
     plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
     plt.ylabel('$$\\hat{\\mathbf{X}}_'+str(j+1)+'$$')
     plt.legend()
@@ -136,10 +138,11 @@ m.initialise(z=z_optim, theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01),
 np.random.seed(111)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.05, thinning=1)
 np.save('Drosophila/out_theta_priebe.npy',q[0])
-np.save('Drosophila/out_theta_priebe.npy',q[1])
+np.save('Drosophila/out_z_priebe.npy',q[1])
 
 ## Majority rule
 cc = estimate_majority(q[1]) 
+cc = relabel_matching(lab, cc)
 a = ari(cc, lab)
 np.save('Drosophila/ari_priebe.npy',np.array([a]))
 

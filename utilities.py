@@ -79,3 +79,25 @@ def lighten_color(color, amount=0.5):
         c = color
     c = colorsys.rgb_to_hls(*mc.to_rgb(c))
     return colorsys.hls_to_rgb(c[0], 1 - amount * (1 - c[1]), c[2])
+
+## Relabel based on 
+def relabel_matching(v1, v2):
+    import numpy as np
+    import pandas as pd
+    ## Copy the initial labels
+    v2_relabelled = np.copy(v2)
+    ## Initialise the quantities of interest (initialisation and best permutation)
+    v2_best = np.copy(v2)
+    max_perm = np.arange(np.max(v2))
+    max_score_diagonal = np.sum(np.diag(pd.crosstab(v1,v2)))
+    ## Calculate the possible permutations of the labels
+    import itertools
+    perms = list(itertools.permutations(list(range(m.K))))
+    for perm in perms:
+        v2_relabelled = np.array(perm)[v2]
+        score_diagonal = np.sum(np.diag(pd.crosstab(v1,v2_relabelled)))
+        if score_diagonal > max_score_diagonal:
+            max_score_diagonal = score_diagonal
+            max_perm = perm
+            v2_best = np.copy(v2_relabelled)
+    return v2_best
