@@ -85,10 +85,10 @@ np.save('ICL/out_z_splines.npy',q[1])
 
 ## Estimate clustering
 clust = estimate_communities(q=q[1],m=m)
+clust = relabel_matching(lab, clust)
 ## Evaluate adjusted Rand index
 a = ari(clust, lab)
 np.save('ICL/ari_splines.npy',a)
-clust = relabel_matching(lab, clust)
 
 ### Plots
 xx = np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),250)
