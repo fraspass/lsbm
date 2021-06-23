@@ -11,9 +11,9 @@ rc('font',**{'family':'serif','serif':['Times']})
 rc('text', usetex=True)
 
 ## Number of samples
-M = 10000
+M = 100
 ## Burnin
-B = 1000
+B = 10
 
 ## Import labels
 lab = np.loadtxt('Data/drosophila_labels.csv', dtype=str)
