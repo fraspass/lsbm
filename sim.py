@@ -7,9 +7,9 @@ import lsbm
 from utilities import *
 
 import matplotlib.pyplot as plt
-from matplotlib import rc
-rc('font',**{'family':'serif','serif':['Times']})
-rc('text', usetex=True)
+#from matplotlib import rc
+#rc('font',**{'family':'serif','serif':['Times']})
+#rc('text', usetex=True)
 
 ## Number of samples
 M = 1000
@@ -50,8 +50,8 @@ uu1 = np.argsort(X[z==0,0])
 uu2 = np.argsort(X[z==1,0])
 plt.plot(X[z==0,0][uu1], X[z==0,1][uu1], '-', linewidth=3, c='black')
 plt.plot(X[z==1,0][uu2], X[z==1,1][uu2], '-', linewidth=3, c='black')
-plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
-plt.ylabel('$$\\hat{\\mathbf{X}}_2$$')
+#plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
+#plt.ylabel('$$\\hat{\\mathbf{X}}_2$$')
 plt.savefig("Sim/x12_sim.pdf",bbox_inches='tight')
 plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
@@ -60,8 +60,8 @@ uu1 = np.argsort(X[z==0,0])
 uu2 = np.argsort(X[z==1,0])
 plt.plot(X[z==0,0][uu1], X[z==0,2][uu1], '-', linewidth=3, c='black')
 plt.plot(X[z==1,0][uu2], X[z==1,2][uu2], '-', linewidth=3, c='black')
-plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
-plt.ylabel('$$\\hat{\\mathbf{X}}_3$$')
+#plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
+#plt.ylabel('$$\\hat{\\mathbf{X}}_3$$')
 plt.savefig("Sim/x13_sim.pdf",bbox_inches='tight')
 plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
@@ -70,8 +70,8 @@ uu1 = np.argsort(X[z==0,1])
 uu2 = np.argsort(X[z==1,2])
 plt.plot(X[z==0,1][uu1], X[z==0,2][uu1], '-', linewidth=3, c='black')
 plt.plot(X[z==1,1][uu2], X[z==1,2][uu2], '-', linewidth=3, c='black')
-plt.xlabel('$$\\hat{\\mathbf{X}}_2$$')
-plt.ylabel('$$\\hat{\\mathbf{X}}_3$$')
+#plt.xlabel('$$\\hat{\\mathbf{X}}_2$$')
+#plt.ylabel('$$\\hat{\\mathbf{X}}_3$$')
 plt.savefig("Sim/x23_sim.pdf",bbox_inches='tight')
 plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
