@@ -35,7 +35,6 @@ k = np.argsort(np.abs(Lambda))[::-1][:2]
 X = np.dot(Gamma[:,k],np.diag(np.sqrt(np.abs(Lambda[k]))))
 
 ## Basis functions
-
 fW = {}
 for j in range(2):
     for k in range(2):
@@ -101,7 +100,7 @@ for k in range(2):
     fW[k,1] = lambda x: np.array([x, x ** 2, x ** 3] + [relu(x - knot) ** 3 for knot in knots])
 
 ## Sampler
-np.random.seed(11711)
+np.random.seed(117)
 m = lsbm.lsbm_gibbs(X=X[:,:2], K=2, W_function=fW)
 m.initialise(z=KMeans(n_clusters=m.K).fit_predict(m.X), theta=(np.abs(m.X[:,0])+np.random.normal(size=m.n,scale=0.001)), 
                             Lambda_0=1/m.n, g_prior=False, b_0=0.01)
@@ -119,6 +118,7 @@ ax.scatter(X[:,0][clust==0], X[:,1][clust==0],c='#FFC107',edgecolor='black',line
 ax.scatter(X[:,0][clust==1], X[:,1][clust==1],c='#004D40',edgecolor='black',linewidth=0.3)
 ax.plot(xx, uu[0][0,1], c='#FFC107')
 ax.plot(xx, uu[0][1,1], c='#004D40')
+#ax.set_xlabel('$$\\hat{\\mathbf{X}}_1$$')
+#ax.set_ylabel('$$\\hat{\\mathbf{X}}_2$$')
 plt.savefig("Harry/x12_harry_splines.pdf",bbox_inches='tight')
 plt.show(block=False); plt.clf(); plt.cla(); plt.close()
-

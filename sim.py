@@ -120,7 +120,7 @@ for k in range(2):
 
 ## Setup model and run MCMC
 m = lsbm.lsbm_gibbs(X=X_tilde[:,:3], K=2, W_function=fW, fixed_function={})
-np.random.seed(171)
+np.random.seed(1771)
 m.initialise(z=np.random.choice(2,size=m.n), theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01), 
                             Lambda_0=1/m.n, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.01)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
