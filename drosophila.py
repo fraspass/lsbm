@@ -50,7 +50,7 @@ for k in range(4):
 
 ## Set up the model and posterior sampler
 m = lsbm.lsbm_gibbs(X=X, K=4, W_function=fW)
-np.random.seed(111)
+np.random.seed(171)
 ## IMPORTANT: the initial values must be labelled carefully to match the corresponding curves  
 from sklearn.cluster import KMeans
 z_init = KMeans(n_clusters=6, random_state=0).fit_predict(X) + 1
@@ -67,7 +67,7 @@ ari(z_optim, lab)
 ## Initialise model
 np.random.seed(111)
 m.initialise(z=np.copy(z_optim), theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01), 
-                            Lambda_0=1/m.n, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=True)
+                            Lambda_0=(1/m.n)**2, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=True)
 ## Run the sampler
 np.random.seed(111)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
@@ -89,7 +89,7 @@ np.save('Drosophila/ari.npy',np.array([a1,a2]))
 ### Plots
 xx = np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),250)
 ## Calculate MAP for the curves based on the estimated clustering
-v = m.map(z=cc, theta=m.X[:,0], range_values=xx)
+v = m.map(z=lab, theta=m.X[:,0], range_values=xx)
 
 ## Plots
 cdict = ['#1E88E5','#FFC107','#D81B60','#23C14B']
@@ -120,7 +120,7 @@ for j in range(d):
     if j == 0:
         fW[0,0] = lambda x: np.array([1])
     else:
-        fW[0,j] = lambda x: np.array([x ** 2, x])
+        fW[0,j] = lambda x: np.array([x, x**2])
     for k in range(1,K):
         fW[k,j] = lambda x: np.array([1])
 
@@ -133,7 +133,7 @@ z_optim, perm_optim = marginal_likelihood_relabeler(z_init=z_init, m=m, first_li
 ## Initialise model
 np.random.seed(111)
 m.initialise(z=z_optim, theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01), 
-                            Lambda_0=1/m.n, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=[True,False,False,False])
+                            Lambda_0=(1/m.n)**2, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=[True,False,False,False])
 ## Run the sampler
 np.random.seed(111)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)

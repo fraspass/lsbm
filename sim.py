@@ -33,12 +33,12 @@ Lambda, Gamma = np.linalg.eigh(A)
 k = np.argsort(np.abs(Lambda))[::-1][:3]
 X_hat = np.dot(Gamma[:,k],np.diag(np.sqrt(np.abs(Lambda[k]))))
 
-## Latent functions
+## Quadratic latent functions
 fW = {}
 for k in range(2):
-    fW[k,0] = lambda x: np.array([x])
-    fW[k,1] = lambda x: np.array([x ** 3, x ** 2, x, 1])
-    fW[k,2] = lambda x: np.array([x ** 3, x ** 2, x, 1])
+    fW[k,0] = lambda x: np.array([x ** 2, x, 1])
+    fW[k,1] = lambda x: np.array([x ** 2, x, 1])
+    fW[k,2] = lambda x: np.array([x ** 2, x, 1])
 
 ## Procrustes alignment for visualisation
 from scipy.linalg import orthogonal_procrustes as proc
@@ -78,8 +78,8 @@ plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 ## Setup model and run MCMC
 m = lsbm.lsbm_gibbs(X=X_tilde[:,:3], K=2, W_function=fW, fixed_function={})
 np.random.seed(1771)
-m.initialise(z=np.random.choice(2,size=m.n), theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01), 
-                            Lambda_0=1/m.n, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.01)
+m.initialise(z=np.random.choice(2,size=m.n), theta=np.sqrt(np.abs(m.X[:,0])), 
+                            Lambda_0=(1/m.n**2), mu_theta=np.sqrt(np.abs(m.X[:,0])).mean(), sigma_theta=10, b_0=0.001, first_linear=False)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
 np.save('Sim/out_theta.npy',q[0])
 np.save('Sim/out_z.npy',q[1])
@@ -93,9 +93,9 @@ np.save('Sim/ari.npy',a)
 
 ### Plot
 from mpl_toolkits.mplot3d import Axes3D
-xx = np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),1000)
+xx = np.linspace(np.min(np.sqrt(np.abs(m.X[:,0]))),np.max(np.sqrt(np.abs(m.X[:,0]))),1000)
 ## Calculate MAP for the curves based on the estimated clustering
-v = m.map(z=clust, theta=m.X[:,0], range_values=xx)
+v = m.map(z=clust, theta=q[0][:,0].mean(axis=1), range_values=xx)
 ## Plot
 fig = plt.figure()
 ax = Axes3D(fig)
@@ -107,32 +107,28 @@ ax.view_init(elev=25, azim=45)
 plt.savefig("Sim/x123_sim.pdf",bbox_inches='tight')
 plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
-## Truncated power splines
-knots = {}
-nknots = 3
-mmin = np.min(X_tilde[:,0])
-mmax = np.max(X_tilde[:,0])
-knots =  np.linspace(start=mmin,stop=mmax,num=nknots+2)[1:-1]
+## Cubic latent functions
+fW = {}
 for k in range(2):
     fW[k,0] = lambda x: np.array([x])
-    for j in [1,2]:
-        fW[k,j] = lambda x: np.array([1, x, x ** 2, x ** 3] + [relu(x - knot) ** 3 for knot in knots])
+    fW[k,1] = lambda x: np.array([x ** 3, x ** 2, x, 1])
+    fW[k,2] = lambda x: np.array([x ** 3, x ** 2, x, 1])
 
 ## Setup model and run MCMC
 m = lsbm.lsbm_gibbs(X=X_tilde[:,:3], K=2, W_function=fW, fixed_function={})
-np.random.seed(1771)
-m.initialise(z=np.random.choice(2,size=m.n), theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01), 
-                            Lambda_0=1/m.n, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.01)
+np.random.seed(11711)
+m.initialise(z=np.random.choice(2,size=m.n), theta=np.sqrt(np.abs(m.X[:,0])), 
+                            Lambda_0=(1/m.n**2), mu_theta=np.sqrt(np.abs(m.X[:,0])).mean(), sigma_theta=10, b_0=0.001)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
-np.save('Sim/out_splines_theta.npy',q[0])
-np.save('Sim/out_splines_z.npy',q[1])
+np.save('Sim/out_cubic_theta.npy',q[0])
+np.save('Sim/out_cubic_z.npy',q[1])
 
 ## Estimate clustering
 clust = estimate_communities(q=q[1],m=m)
 clust = relabel_matching(z, clust)
 ## Evaluate adjusted Rand index
 a = ari(clust, z)
-np.save('Sim/ari_splines.npy',a)
+np.save('Sim/ari_cubic.npy',a)
 
 ### Plot
 xx = np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),1000)
@@ -146,5 +142,5 @@ ax.scatter(v[0][0,0], v[0][0,1], v[0][0,2], s=1, c='#009E73')
 ax.scatter(v[0][1,0], v[0][1,1], v[0][1,2], s=1, c='#0072B2')
 ax.scatter(X[:,0],X[:,1],X[:,2],s=1,c='black')
 ax.view_init(elev=25, azim=45)
-plt.savefig("Sim/x123_sim_splines.pdf",bbox_inches='tight')
+plt.savefig("Sim/x123_sim_cubic.pdf",bbox_inches='tight')
 plt.show(block=False); plt.clf(); plt.cla(); plt.close()

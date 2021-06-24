@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 #rc('font',**{'family':'serif','serif':['Times']})
 #rc('text', usetex=True)
 
-## Number of samples 
+## Number of samples and burnin
 M = 10000
 B = 1000
 
@@ -45,7 +45,7 @@ np.random.seed(117)
 m = lsbm.lsbm_gibbs(X=X[:,:2], K=2, W_function=fW)
 ## Initialisation
 m.initialise(z=KMeans(n_clusters=m.K).fit_predict(m.X), theta=(np.abs(m.X[:,0])+np.random.normal(size=m.n,scale=0.000001)), 
-                            Lambda_0=1/m.n, g_prior=False, b_0=0.01)
+                            Lambda_0=(1/m.n)**2, g_prior=False, b_0=0.001)
 ## Sampler
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
 np.save('Harry/out_theta.npy',q[0])
@@ -103,7 +103,7 @@ for k in range(2):
 np.random.seed(117)
 m = lsbm.lsbm_gibbs(X=X[:,:2], K=2, W_function=fW)
 m.initialise(z=KMeans(n_clusters=m.K).fit_predict(m.X), theta=(np.abs(m.X[:,0])+np.random.normal(size=m.n,scale=0.001)), 
-                            Lambda_0=1/m.n, g_prior=False, b_0=0.01)
+                            Lambda_0=(1/m.n)**2, g_prior=False, b_0=0.001)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
 np.save('Harry/out_theta_splines.npy',q[0])
 np.save('Harry/out_z_splines.npy',q[1])
