@@ -5,9 +5,9 @@ from sklearn.cluster import KMeans
 from utilities import *
 
 import matplotlib.pyplot as plt
-from matplotlib import rc
-rc('font',**{'family':'serif','serif':['Times']})
-rc('text', usetex=True)
+#from matplotlib import rc
+#rc('font',**{'family':'serif','serif':['Times']})
+#rc('text', usetex=True)
 
 ## Load data
 X = np.load('Data/X_icl2.npy')[:,:5]
@@ -41,7 +41,7 @@ for k in range(4):
         csi[k,j] = lambda theta,theta_prime: np.matmul(np.matmul(fW[j](theta),Delta[j]),np.transpose(fW[j](theta_prime)))
 
 ### Setup model and MCMC
-M = 1000; B = 100
+M = 10000; B = 1000
 m = lsbm_gp.lsbm_gp_gibbs(X=X[:,:5], K=4, csi=csi)
 np.random.seed(11711)
 z_init = np.random.choice(m.K,size=m.n)
@@ -79,8 +79,8 @@ for g in [2,3,0,1]:
     ax.scatter(X[:,0][ix], X[:,1][ix], c = cdict[g], label = group[g], marker=mms[g], edgecolor='black', linewidth=0.3)
 
 ax.legend()
-plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
-plt.ylabel('$$\\hat{\\mathbf{X}}_2$$')
+#plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
+#plt.ylabel('$$\\hat{\\mathbf{X}}_2$$')
 
 # for g in [2,3,0,1]:
 #    ix = np.where(lab == g)
