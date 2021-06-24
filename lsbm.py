@@ -321,7 +321,8 @@ class lsbm_gibbs:
             z_chain = np.zeros((self.n,chains,samples // thinning))
         for chain in range(chains):
             for s in range(samples+burn):
-                print('\rChain:', chain+1,'/', chains, '\tBurnin:', s+1 if s<burn else burn, '/', burn, '\tSamples:', s-burn+1 if s>burn else 0,'/', samples, end='')
+                print('\rChain:', chain+1,'/', chains, '\tBurnin:', s+1 if s<burn else burn, '/', burn, 
+                    '\tSamples:', s-burn+1 if s>=burn else 0,'/', samples, end='')
                 move = ['communities','parameters']
                 m = np.random.choice(move)
                 if m == 'communities':

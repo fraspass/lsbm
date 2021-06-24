@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 #rc('font',**{'family':'serif','serif':['Times']})
 #rc('text', usetex=True)
 
-## Number of samples
+## Number of samples and burnin
 M = 10000
 B = 1000
 

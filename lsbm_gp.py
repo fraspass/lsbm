@@ -11,6 +11,7 @@ from scipy.special import logsumexp
 ## Utility functions to update inverses when row/columns are added/removed
 
 # 1) Update inverse matrix M when the i-th row/column is removed
+# M is already an inverse matrix
 def delete_inverse(M, ind):
   A = np.delete(arr=np.delete(arr=M,obj=ind,axis=0),obj=ind,axis=1)
   B = np.delete(arr=M,obj=ind,axis=0)[:,ind]
@@ -19,6 +20,9 @@ def delete_inverse(M, ind):
   return A - np.outer(B,C) / D
 
 # 2) Update inverse matrix M when a row/column is added on position i
+# M is already an inverse matrix
+# This function might create numerical problems for some values of the prior parameters. 
+# If fast_update=True returns errors, try fast_update=False, and this function will not be used.
 def add_inverse(M, row, col, ind):
   A11_inv = M
   A12 = np.delete(arr=col,obj=ind).reshape(-1,1)
@@ -38,14 +42,13 @@ def add_inverse(M, row, col, ind):
 class lsbm_gp_gibbs:
 
     ## Initialise the class with the number of components and embedding
-    def __init__(self, X, K, csi, fixed_function={}):
+    def __init__(self, X, K, csi):
         self.X = X
         self.n = X.shape[0]
         self.d = X.shape[1]
         self.K = K
         ## Kernel functions
         self.csi = csi
-        self.fixed_function = fixed_function
 
     ## Initialise the model parameters
     def initialise(self, z, theta, a_0=1, b_0=1, nu=1, mu_theta=0, sigma_theta=1, first_linear=True):
@@ -53,6 +56,9 @@ class lsbm_gp_gibbs:
         self.z = z
         if np.min(self.z) == 1:
             self.z -= 1
+            if np.max(self.z) == 0:
+                raise ValueError('z must have at least two different labels')
+        ## Theta
         self.theta = theta
         ## Theta hyperparameters
         self.mu_theta = mu_theta
@@ -64,10 +70,6 @@ class lsbm_gp_gibbs:
             self.first_linear = first_linear
             if np.sum([isinstance(first_linear[k],bool) for k in first_linear]) != self.K:
                 raise ValueError('first_linear is either a boolean or a K-vector of booleans')
-        ## Fixed basis functions
-        self.fixed_W = {}
-        for j in self.fixed_function:
-            self.fixed_W[j] = np.array([self.fixed_function[j](self.theta[i]) for i in range(self.n)])[:,0] ## rewrite using only one coefficient (1)
         ## Prior parameters
         self.nu = nu
         self.a0 = a_0
@@ -76,17 +78,15 @@ class lsbm_gp_gibbs:
         self.nk = Counter(self.z)
         self.a = {}; self.groups = {}; self.X_groups = {}; self.theta_groups = {}
         for k in range(self.K):
-            self.a[k] = self.a0 + self.nk[k] / 2
-            self.groups[k] = np.arange(self.n)[self.z == k]
-            self.X_groups[k] = self.X[self.z == k]
-            self.theta_groups[k] = self.theta[self.z == k]
+            self.a[k] = self.a0 + self.nk[k] / 2.
+            self.groups[k] = np.where(self.z == k)[0]
+            self.X_groups[k] = self.X[self.groups[k]]
+            self.theta_groups[k] = self.theta[self.groups[k]]
         self.b = {}; self.Csi_I = {}; self.X_Csi_X = {}
         for j in range(self.d):
             self.b[j] = {}
             for k in range(self.K):
-                X = self.X[self.z == k][:,j]
-                if j in self.fixed_function:
-                    X -= self.fixed_W[j][self.z == k]
+                X = self.X_groups[k][:,j]
                 if j == 0 and self.first_linear[k]:
                     self.b[j][k] = self.b0 + np.sum((X - self.theta[self.z == k]) ** 2) / 2
                 else:
@@ -97,7 +97,7 @@ class lsbm_gp_gibbs:
     ########################################################
     ### a. Resample the allocations using Gibbs sampling ###
     ########################################################
-    def gibbs_communities(self,l=1):	
+    def gibbs_communities(self, l=1, fast_update=True):	
         ## Change the value of l when too large
         if l > self.n:
             l = self.n
@@ -112,14 +112,12 @@ class lsbm_gp_gibbs:
             self.a[zold] -= .5
             self.nk[zold] -= 1.0
             ## Update groups, X_group and theta_group
-            ind_del = np.where(self.groups[zold] == i)[0]
+            ind_del = int(np.where(self.groups[zold] == i)[0])
             self.groups[zold] = np.delete(self.groups[zold], obj=ind_del)
             self.X_groups[zold] = np.delete(self.X_groups[zold], obj=ind_del, axis=0)
             self.theta_groups[zold] = np.delete(self.theta_groups[zold], obj=ind_del)
             ## Loop over dimensions
             for j in range(self.d):
-                if j in self.fixed_function:
-                    position[j] -= self.fixed_W[j][i]
                 if j == 0 and self.first_linear[zold]:
                     b_old[j] = float(np.copy(self.b[j][zold]))
                     self.b[j][zold] -= (position[j] - thetai) ** 2 / 2
@@ -148,7 +146,6 @@ class lsbm_gp_gibbs:
                         community_probs[k] += t.logpdf(position[j], df=2*self.a[k], loc=mu_star, scale=np.sqrt(self.b[j][k] / self.a[k] * (1 + csi_star)))              
             ## Raise error if nan probabilities are computed
             if np.isnan(community_probs).any():
-                print(csi_star)
                 raise ValueError("Error in the allocation probabilities.")
             ## Update allocation
             znew = np.random.choice(self.K, p=np.exp(community_probs - logsumexp(community_probs)))
@@ -172,12 +169,15 @@ class lsbm_gp_gibbs:
                 ## Update to new values
                 for j in range(self.d):
                     if j == 0 and self.first_linear[znew]:
-                        self.b[j][znew] += (position[j] - self.theta[i]) ** 2 / 2
+                        self.b[j][znew] += (position[j] - thetai) ** 2 / 2
                     else:
-                        add_row = self.csi[znew,j](self.theta[i],self.theta_groups[znew])
-                        ## add_row = np.insert(add_row, obj=ind_add, values=self.csi[znew,j](self.theta[i],self.theta[i]))
-                        add_row[ind_add] += 1
-                        self.Csi_I[znew,j] = add_inverse(self.Csi_I[znew,j], row=add_row, col=add_row, ind=ind_add)
+                        ## Fast update might cause numerical errors
+                        if fast_update:
+                            add_row = self.csi[znew,j](thetai,self.theta_groups[znew])
+                            add_row[ind_add] += 1
+                            self.Csi_I[znew,j] = add_inverse(self.Csi_I[znew,j], row=add_row, col=add_row, ind=ind_add)
+                        else:
+                            self.Csi_I[znew,j] = np.linalg.inv(self.csi[znew,j](self.theta_groups[znew],self.theta_groups[znew]) + np.diag(np.ones(int(self.nk[znew]))))
                         self.X_Csi_X[znew,j] = np.matmul(np.matmul(np.transpose(self.X_groups[znew][:,j]), self.Csi_I[znew,j]),self.X_groups[znew][:,j])
                         self.b[j][znew] += self.X_Csi_X[znew,j] / 2 
         return None
@@ -185,7 +185,7 @@ class lsbm_gp_gibbs:
     ##############################################
     ### b. Resample the latent positions theta ###
     ##############################################
-    def resample_theta(self, l=1, sigma_prop=0.1):
+    def resample_theta(self, l=1, sigma_prop=0.1, fast_update=True):
        ## Change the value of l when too large
         if l > self.n:
             l = self.n
@@ -203,8 +203,6 @@ class lsbm_gp_gibbs:
             self.nk[zold] -= 1.0
             ## Loop over dimensions
             for j in range(self.d):
-                if j in self.fixed_function:
-                    position[j] -= self.fixed_W[j][i]
                 if j == 0 and self.first_linear[zold]:
                     b_old[j] = float(np.copy(self.b[j][zold]))
                     self.b[j][zold] -= (position[j] - theta_old) ** 2 / 2
@@ -223,22 +221,22 @@ class lsbm_gp_gibbs:
             ## Calculate proposal
             theta_prop = np.random.normal(loc=theta_old, scale=sigma_prop)
             position_prop = np.copy(position)
+            ## Update to new values
             for j in range(self.d):
-                if j in self.fixed_function:
-                    position_prop[j] -= self.fixed_function[j](theta_prop)
-                ## Update to new values
-                for j in range(self.d):
-                    b_prop[j] = self.b0
-                    if j == 0 and self.first_linear[zold]:
-                        b_prop[j] += (position_prop[j] - theta_prop) ** 2 / 2
-                    else:
-                        tz = np.copy(self.theta_groups[zold])
-                        np.put(tz, ind=indi, v=theta_prop)
+                b_prop[j] = float(np.copy(self.b[j][zold]))
+                if j == 0 and self.first_linear[zold]:
+                    b_prop[j] += (position_prop[j] - theta_prop) ** 2 / 2
+                else:
+                    tz = np.copy(self.theta_groups[zold])
+                    np.put(tz, ind=indi, v=theta_prop)
+                    if fast_update:
                         add_row = self.csi[zold,j](theta_prop,tz)
                         add_row[indi] += 1
                         Csi_I_Prop[j] = add_inverse(self.Csi_I[zold,j], row=add_row, col=add_row, ind=indi)
-                        X_Csi_X_Prop[j] = float(np.matmul(np.matmul(self.X_groups[zold][:,j].reshape(1,-1), Csi_I_Prop[j]),self.X_groups[zold][:,j].reshape(-1,1)))
-                        b_prop[j] += X_Csi_X_Prop[j] / 2 
+                    else:
+                        Csi_I_Prop[j] = np.linalg.inv(self.csi[zold,j](tz,tz) + np.diag(np.ones(int(self.nk[zold]+1))))
+                    X_Csi_X_Prop[j] = float(np.matmul(np.matmul(self.X_groups[zold][:,j].reshape(1,-1), Csi_I_Prop[j]),self.X_groups[zold][:,j].reshape(-1,1)))
+                    b_prop[j] += X_Csi_X_Prop[j] / 2 
             ## Calculate acceptance ratio
             numerator_accept = norm.logpdf(theta_prop,loc=self.mu_theta,scale=self.sigma_theta)
             for j in range(self.d):
@@ -265,6 +263,7 @@ class lsbm_gp_gibbs:
             ## Calculate acceptance probability
             accept_ratio = float(numerator_accept - denominator_accept)
             accept = (-np.random.exponential(1) < accept_ratio)
+            accepts = True
             ## Update parameters
             self.a[zold] += .5
             self.nk[zold] += 1.0
@@ -291,7 +290,7 @@ class lsbm_gp_gibbs:
     ### Calculate maximum a posteriori estimate of the parameters given z and theta ###
     ###################################################################################
     def map(self,z,theta,range_values):
-        mm = lsbm_gp_gibbs(X=self.X, K=self.K, csi=self.csi, fixed_function=self.fixed_W)
+        mm = lsbm_gp_gibbs(X=self.X, K=self.K, csi=self.csi)
         mm.initialise(z=z, theta=theta, a_0=self.a0, b_0=self.b0, nu=self.nu, first_linear=self.first_linear)
         mean = {}; confint = {}; Csi_X = {}
         for j in range(mm.d):
@@ -317,9 +316,9 @@ class lsbm_gp_gibbs:
     #####################
     ### MCMC sampling ###
     #####################
-    def mcmc(self, samples=1000, burn=100, chains=1, store_chains=True, q=100, thinning=1, sigma_prop=0.1):
+    def mcmc(self, samples=1000, burn=100, chains=1, store_chains=True, ell=100, thinning=1, sigma_prop=0.1, fast_update=True):
         ## q is the number of re-allocated nodes per iteration
-        self.q = q
+        self.ell = ell
         ## Option to store the chains
         if store_chains:
             theta_chain = np.zeros((self.n,chains,samples // thinning))
@@ -327,13 +326,13 @@ class lsbm_gp_gibbs:
         for chain in range(chains):
             for s in range(samples+burn):
                 print('\rChain:', chain+1,'/', chains, '\tBurnin:', s+1 if s<burn else burn, '/', burn, 
-                            '\tSamples:', s-burn+1 if s>burn else 0,'/', samples, end='')
+                            '\tSamples:', s-burn+1 if s>=burn else 0,'/', samples, end='')
                 move = ['communities','parameters']
                 m = np.random.choice(move)
                 if m == 'communities':
-                    self.gibbs_communities(l=self.q)
+                    self.gibbs_communities(l=self.ell, fast_update=fast_update)
                 else:
-                    self.resample_theta(l=self.q, sigma_prop=sigma_prop)
+                    self.resample_theta(l=self.ell, sigma_prop=sigma_prop, fast_update=fast_update)
                 if s >= burn and store_chains and s % thinning == 0:
                     theta_chain[:,chain,(s - burn) // thinning] = self.theta
                     z_chain[:,chain,(s - burn) // thinning] = self.z
