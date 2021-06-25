@@ -6,9 +6,9 @@ import lsbm
 from utilities import *
 
 import matplotlib.pyplot as plt
-#from matplotlib import rc
-#rc('font',**{'family':'serif','serif':['Times']})
-#rc('text', usetex=True)
+from matplotlib import rc
+rc('font',**{'family':'serif','serif':['Times']})
+rc('text', usetex=True)
 
 ## Number of samples and burnin
 M = 10000
@@ -63,8 +63,8 @@ ax.scatter(X[:,0][clust==0], X[:,1][clust==0],c='#FFC107',edgecolor='black',line
 ax.scatter(X[:,0][clust==1], X[:,1][clust==1],c='#004D40',edgecolor='black',linewidth=0.3)
 ax.plot(xx, uu[0][0,1], c='#FFC107')
 ax.plot(xx, uu[0][1,1], c='#004D40')
-#plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
-#plt.ylabel('$$\\hat{\\mathbf{X}}_2$$')
+plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
+plt.ylabel('$$\\hat{\\mathbf{X}}_2$$')
 ax.text(X[np.where(names=='Sirius Black')[0],0][0],X[np.where(names=='Sirius Black')[0],1][0],'Sirius Black')
 ax.text(X[np.where(names=='Albus Dumbledore')[0],0][0],X[np.where(names=='Albus Dumbledore')[0],1][0],'Albus Dumbledore')
 ax.text(X[np.where(names=='Dudley Dursley')[0],0][0],X[np.where(names=='Dudley Dursley')[0],1][0],'Dudley Dursley',va='top')
@@ -118,7 +118,7 @@ ax.scatter(X[:,0][clust==0], X[:,1][clust==0],c='#FFC107',edgecolor='black',line
 ax.scatter(X[:,0][clust==1], X[:,1][clust==1],c='#004D40',edgecolor='black',linewidth=0.3)
 ax.plot(xx, uu[0][0,1], c='#FFC107')
 ax.plot(xx, uu[0][1,1], c='#004D40')
-#ax.set_xlabel('$$\\hat{\\mathbf{X}}_1$$')
-#ax.set_ylabel('$$\\hat{\\mathbf{X}}_2$$')
+ax.set_xlabel('$$\\hat{\\mathbf{X}}_1$$')
+ax.set_ylabel('$$\\hat{\\mathbf{X}}_2$$')
 plt.savefig("Harry/x12_harry_splines.pdf",bbox_inches='tight')
 plt.show(block=False); plt.clf(); plt.cla(); plt.close()
