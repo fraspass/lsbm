@@ -34,12 +34,9 @@ for k in range(4):
     fW[k,0] = lambda x: np.array([x])
     for j in range(1,6):
         if k == 0:
-            fW[k,j] = lambda x: np.array([x, x ** 2, x ** 3] + [relu(knot - x) ** 3 for knot in knots])
+            fW[k,j] = lambda x: np.array([x, x ** 2, x ** 3]) # + [relu(knot - x) ** 3 for knot in knots])
         elif k == 1:
-            if j == 5:
-                fW[k,j] = lambda x: np.array([1,x])
-            else:
-                fW[k,j] = lambda x: np.array([x])
+            fW[k,j] = lambda x: np.array([1,x])
         elif k == 3:
             fW[k,j] = lambda x: np.array([x])
         else:
@@ -71,8 +68,8 @@ m.initialise(z=np.copy(z_optim), theta=m.X[:,0]+np.random.normal(size=m.n,scale=
 ## Run the sampler
 np.random.seed(111)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
-np.save('Drosophila/out_theta.npy',q[0])
-np.save('Drosophila/out_z.npy',q[1])
+np.save('Drosophila/out_theta_full.npy',q[0])
+np.save('Drosophila/out_z_full.npy',q[1])
 
 ## Estimate clustering
 clust = estimate_communities(q=q[1],m=m)
@@ -84,7 +81,7 @@ a1 = ari(clust, lab)
 cc = estimate_majority(q[1]) 
 cc = relabel_matching(lab, cc)
 a2 = ari(cc, lab)
-np.save('Drosophila/ari.npy',np.array([a1,a2]))
+np.save('Drosophila/ari_full.npy',np.array([a1,a2]))
 
 ### Plots
 xx = np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),250)
@@ -107,7 +104,7 @@ for j in range(1,m.d):
     plt.xlabel('$$\\hat{\\mathbf{Y}}_1$$')
     plt.ylabel('$$\\hat{\\mathbf{Y}}_'+str(j+1)+'$$')
     plt.legend()
-    plt.savefig('Drosophila/droso_1'+str(j+1)+'.pdf',bbox_inches='tight')
+    plt.savefig('Drosophila/ddroso_1'+str(j+1)+'.pdf',bbox_inches='tight')
     plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
 ### Define latent basis functions (Priebe et al., 2017 & Athreya et al., 2018)
