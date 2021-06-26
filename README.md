@@ -60,6 +60,7 @@ The figures in the paper could be reproduced using the following files:
 - Figure 1: `sim_pictures_intro.py`;
 - Figure 3: `sim_pictures.py`;
 - Figures 4 and 5: `sim.py`;
-- Figure 6: `harry_potter.py`.
+- Figure 6: `harry_potter.py`;
+- Figure 7 and 8: `drosophila.py`.
 
 For security reasons, the ICL network data have *not* been made available, but the code to run the quadratic model and truncated power basis spline model are available in `icl.py`. Similarly, `icl_gp.py` reproduces the same models under an explicit Gaussian process setting.
