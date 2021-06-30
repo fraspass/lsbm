@@ -47,16 +47,17 @@ xx = np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),250)
 ## Calculate MAP for the curves based on the estimated clustering
 v = m.map(z=clust, theta=m.X[:,0], range_values=xx)
 ## Parameters of plots
-cdict = ['#1E88E5','#FFC107','#D81B60','#004D40']
-mms = ['o', 'v', 'd', 's']
-group = ['Mathematics','Medicine','Chemistry','Civil Engineering']
+group = ['Chemistry', 'Civil Engineering', 'Mathematics', 'Medicine']
+mms = ['d','s','o','v']
+cdict = ['#D81B60','#004D40','#1E88E5','#FFC107']
+gls = np.array([1,0,2,3])
 ### Scatterplots
 for j in range(1,m.d):
-    for g in [2,3,0,1]:
-        ix = np.where(lab == g)
-        ix2 = np.where(clust == g)
+    for g in range(4):
+        ix = np.where(lab == gls[g])[0]
+        ix2 = np.where(clust == gls[g])[0]
         plt.scatter(m.X[:,0][ix], m.X[:,j][ix], c=cdict[g], label=group[g], marker=mms[g], edgecolor='black', linewidth=0.3)
-        plt.plot(v[0][g,0], v[0][g,j], c=cdict[g])
+        plt.plot(v[0][gls[g],0], v[0][gls[g],j], c=cdict[g])
     plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
     plt.ylabel('$$\\hat{\\mathbf{X}}_'+str(j+1)+'$$')
     plt.legend()
@@ -95,16 +96,16 @@ xx = np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),250)
 ## Calculate MAP for the curves based on the estimated clustering
 v = m.map(z=clust, theta=m.X[:,0], range_values=xx)
 ## Parameters of plots
-cdict = ['#1E88E5','#FFC107','#D81B60','#004D40']
-mms = ['o', 'v', 'd', 's']
-group = ['Mathematics','Medicine','Chemistry','Civil Engineering']
+group = ['Chemistry', 'Civil Engineering', 'Mathematics', 'Medicine']
+mms = ['d','s','o','v']
+cdict = ['#D81B60','#004D40','#1E88E5','#FFC107']
 ### Scatterplots
 for j in range(1,m.d):
-    for g in [2,3,0,1]:
-        ix = np.where(lab == g)
-        ix2 = np.where(clust == g)
+    for g in range(4):
+        ix = np.where(lab == gls[g])
+        ix2 = np.where(clust == gls[g])
         plt.scatter(m.X[:,0][ix], m.X[:,j][ix], c=cdict[g], label=group[g], marker=mms[g], edgecolor='black', linewidth=0.3)
-        plt.plot(v[0][g,0], v[0][g,j], c=cdict[g])
+        plt.plot(v[0][gls[g],0], v[0][gls[g],j], c=cdict[g])
     plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
     plt.ylabel('$$\\hat{\\mathbf{X}}_'+str(j+1)+'$$')
     plt.legend()
