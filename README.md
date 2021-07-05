@@ -1,6 +1,6 @@
 # Latent structure blockmodels for Bayesian spectral graph clustering
 
-This reposit contains *python* code used to reproduce results and simulations in *"Latent structure blockmodels for Bayesian spectral graph clustering"*.
+This repository contains *python* code used to reproduce results and simulations in *"Latent structure blockmodels for Bayesian spectral graph clustering"*.
 
 ## Understanding the code
 
