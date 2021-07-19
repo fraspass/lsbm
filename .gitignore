@@ -5,3 +5,16 @@ __pycache__/
 Data/icl*.csv
 Data/pol*
 Data/lab*.csv
+Data/*.npy
+Sim/*
+ICL/*
+.Rhistory
+Drosophila/*
+Harry/*
+INPUT.md
+*talk.py
+python_gmm.py
+Data/droso_labels_numbers.csv
+Data/drosophila_A.csv
+drosophila_gmm.R
+icl_extra.py

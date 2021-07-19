@@ -13,7 +13,7 @@ X = np.loadtxt('Data/drosophila_dase.csv', delimiter=',')
 A = np.loadtxt('Data/drosophila_A.csv',delimiter=',',skiprows=1,dtype=int)
 
 from sklearn.mixture import GaussianMixture as GMM
-z1 = np.mean([ari(lab, GMM(n_components=6).fit_predict(X)) for _ in range(500)])
+z1 = np.mean([ari(lab, GMM(n_components=4).fit_predict(X)) for _ in range(500)])
 z2 = np.mean([ari(lab, GMM(n_components=4).fit_predict(X / np.linalg.norm(X,axis=1).reshape(-1,1))) for _ in range(500)])
 z3 = np.mean([ari(lab, GMM(n_components=6).fit_predict(X)) for _ in range(500)])
 
