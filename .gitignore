@@ -2,10 +2,10 @@
 .DS_Store
 */.DS_Store
 __pycache__/
-Data/icl*.csv
-Data/pol*
-Data/lab*.csv
-Data/*.npy
+data/icl*.csv
+data/pol*
+data/lab*.csv
+data/*.npy
 Sim/*
 ICL/*
 .Rhistory
@@ -14,8 +14,8 @@ Harry/*
 INPUT.md
 *talk.py
 scripts/python_gmm.py
-Data/droso_labels_numbers.csv
-Data/drosophila_A.csv
+data/droso_labels_numbers.csv
+data/drosophila_A.csv
 scripts/drosophila_gmm.R
 scripts/mi*
 scripts/icl_extra.py
