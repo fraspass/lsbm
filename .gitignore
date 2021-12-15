@@ -13,8 +13,10 @@ Drosophila/*
 Harry/*
 INPUT.md
 *talk.py
-python_gmm.py
+scripts/python_gmm.py
 Data/droso_labels_numbers.csv
 Data/drosophila_A.csv
-drosophila_gmm.R
-icl_extra.py
+scripts/drosophila_gmm.R
+scripts/mi*
+scripts/icl_extra.py
+notebooks/.ipynb_checkpoints/*
