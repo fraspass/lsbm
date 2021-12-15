@@ -4,7 +4,6 @@ from scipy.sparse import coo_matrix
 from sklearn.metrics import adjusted_rand_score as ari
 from sklearn.cluster import KMeans
 import lsbm
-from utilities import *
 
 import matplotlib.pyplot as plt
 from matplotlib import rc
@@ -52,7 +51,7 @@ plt.plot(X[z==0,0][uu1], X[z==0,1][uu1], '-', linewidth=3, c='black')
 plt.plot(X[z==1,0][uu2], X[z==1,1][uu2], '-', linewidth=3, c='black')
 plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
 plt.ylabel('$$\\hat{\\mathbf{X}}_2$$')
-plt.savefig("Sim/x12_sim.pdf",bbox_inches='tight')
+plt.savefig("../Sim/x12_sim.pdf",bbox_inches='tight')
 plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
 plt.scatter(X_tilde[:,0], X_tilde[:,2], c=np.array(['#009E73','#0072B2'])[z], edgecolor='black',linewidth=0.3)
@@ -62,7 +61,7 @@ plt.plot(X[z==0,0][uu1], X[z==0,2][uu1], '-', linewidth=3, c='black')
 plt.plot(X[z==1,0][uu2], X[z==1,2][uu2], '-', linewidth=3, c='black')
 plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
 plt.ylabel('$$\\hat{\\mathbf{X}}_3$$')
-plt.savefig("Sim/x13_sim.pdf",bbox_inches='tight')
+plt.savefig("../Sim/x13_sim.pdf",bbox_inches='tight')
 plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
 plt.scatter(X_tilde[:,1], X_tilde[:,2], c=np.array(['#009E73','#0072B2'])[z], edgecolor='black',linewidth=0.3)
@@ -72,7 +71,7 @@ plt.plot(X[z==0,1][uu1], X[z==0,2][uu1], '-', linewidth=3, c='black')
 plt.plot(X[z==1,1][uu2], X[z==1,2][uu2], '-', linewidth=3, c='black')
 plt.xlabel('$$\\hat{\\mathbf{X}}_2$$')
 plt.ylabel('$$\\hat{\\mathbf{X}}_3$$')
-plt.savefig("Sim/x23_sim.pdf",bbox_inches='tight')
+plt.savefig("../Sim/x23_sim.pdf",bbox_inches='tight')
 plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
 ## Setup model and run MCMC
@@ -81,15 +80,15 @@ np.random.seed(1771)
 m.initialise(z=np.random.choice(2,size=m.n), theta=np.sqrt(np.abs(m.X[:,0])), 
                             Lambda_0=(1/m.n**2), mu_theta=np.sqrt(np.abs(m.X[:,0])).mean(), sigma_theta=10, b_0=0.001, first_linear=False)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
-np.save('Sim/out_theta.npy',q[0])
-np.save('Sim/out_z.npy',q[1])
+np.save('../Sim/out_theta.npy',q[0])
+np.save('../Sim/out_z.npy',q[1])
 
 ## Estimate clustering
-clust = estimate_communities(q=q[1],m=m)
-clust = relabel_matching(z, clust)
+clust = lsbm.estimate_communities(q=q[1],m=m)
+clust = lsbm.relabel_matching(z, clust)
 ## Evaluate adjusted Rand index
 a = ari(clust, z)
-np.save('Sim/ari.npy',a)
+np.save('../Sim/ari.npy',a)
 
 ### Plot
 from mpl_toolkits.mplot3d import Axes3D
@@ -104,7 +103,7 @@ ax.scatter(v[0][0,0], v[0][0,1], v[0][0,2], s=1, c='#009E73')
 ax.scatter(v[0][1,0], v[0][1,1], v[0][1,2], s=1, c='#0072B2')
 ax.scatter(X[:,0],X[:,1],X[:,2],s=1,c='black',alpha=0.25)
 ax.view_init(elev=25, azim=45)
-plt.savefig("Sim/x123_sim.pdf",bbox_inches='tight')
+plt.savefig("../Sim/x123_sim.pdf",bbox_inches='tight')
 plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
 ## Cubic latent functions
@@ -120,15 +119,15 @@ np.random.seed(11711)
 m.initialise(z=np.random.choice(2,size=m.n), theta=np.sqrt(np.abs(m.X[:,0])), 
                             Lambda_0=(1/m.n**2), mu_theta=np.sqrt(np.abs(m.X[:,0])).mean(), sigma_theta=10, b_0=0.001)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
-np.save('Sim/out_cubic_theta.npy',q[0])
-np.save('Sim/out_cubic_z.npy',q[1])
+np.save('../Sim/out_cubic_theta.npy',q[0])
+np.save('../Sim/out_cubic_z.npy',q[1])
 
 ## Estimate clustering
-clust = estimate_communities(q=q[1],m=m)
-clust = relabel_matching(z, clust)
+clust = lsbm.estimate_communities(q=q[1],m=m)
+clust = lsbm.relabel_matching(z, clust)
 ## Evaluate adjusted Rand index
 a = ari(clust, z)
-np.save('Sim/ari_cubic.npy',a)
+np.save('../Sim/ari_cubic.npy',a)
 
 ### Plot
 xx = np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),1000)
@@ -142,5 +141,5 @@ ax.scatter(v[0][0,0], v[0][0,1], v[0][0,2], s=1, c='#009E73')
 ax.scatter(v[0][1,0], v[0][1,1], v[0][1,2], s=1, c='#0072B2')
 ax.scatter(X[:,0],X[:,1],X[:,2],s=1,c='black',alpha=0.25)
 ax.view_init(elev=25, azim=45)
-plt.savefig("Sim/x123_sim_cubic.pdf",bbox_inches='tight')
+plt.savefig("../Sim/x123_sim_cubic.pdf",bbox_inches='tight')
 plt.show(block=False); plt.clf(); plt.cla(); plt.close()

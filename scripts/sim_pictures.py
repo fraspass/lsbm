@@ -45,7 +45,7 @@ plt.scatter(X_tilde[:,0], X_tilde[:,1], c=np.array(['#009E73','#0072B2'])[z], ed
 plt.scatter([m[0][0], m[1][0]], [m[0][1], m[1][1]], edgecolor='black',linewidth=0.3, c='black')
 plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
 plt.ylabel('$$\\hat{\\mathbf{X}}_2$$')
-plt.savefig("sbm_sim.pdf",bbox_inches='tight')
+plt.savefig("../pictures/sbm_sim.pdf",bbox_inches='tight')
 plt.show()
 
 ### Degree-corrected blockmodel
@@ -71,7 +71,7 @@ plt.plot(X[z==0,0][uu1], X[z==0,1][uu1], '-', linewidth=3, c='black')
 plt.plot(X[z==1,0][uu2], X[z==1,1][uu2], '-', linewidth=3, c='black')
 plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
 plt.ylabel('$$\\hat{\\mathbf{X}}_2$$')
-plt.savefig("dcsbm_sim.pdf",bbox_inches='tight')
+plt.savefig("../pictures/dcsbm_sim.pdf",bbox_inches='tight')
 plt.show()
 
 ### Quadratic
@@ -100,5 +100,5 @@ plt.plot(X[z==0,0][uu1], X[z==0,1][uu1], '-', linewidth=3, c='black')
 plt.plot(X[z==1,0][uu2], X[z==1,1][uu2], '-', linewidth=3, c='black')
 plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
 plt.ylabel('$$\\hat{\\mathbf{X}}_2$$')
-plt.savefig("quadratic_sim.pdf",bbox_inches='tight')
+plt.savefig("../pictures/quadratic_sim.pdf",bbox_inches='tight')
 plt.show()

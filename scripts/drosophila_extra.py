@@ -5,12 +5,12 @@ from sklearn.preprocessing import LabelEncoder as labeler
 np.random.seed(171)
 
 ## Import labels
-lab = np.loadtxt('Data/drosophila_labels.csv', dtype=str)
+lab = np.loadtxt('../data/drosophila_labels.csv', dtype=str)
 lab = labeler().fit(lab).transform(lab)
 ## Import embeddings
-X = np.loadtxt('Data/drosophila_dase.csv', delimiter=',')
+X = np.loadtxt('../data/drosophila_dase.csv', delimiter=',')
 ## Import adjacency matrix
-A = np.loadtxt('Data/drosophila_A.csv',delimiter=',',skiprows=1,dtype=int)
+A = np.loadtxt('../data/drosophila_A.csv',delimiter=',',skiprows=1,dtype=int)
 
 from sklearn.mixture import GaussianMixture as GMM
 z1 = np.mean([ari(lab, GMM(n_components=4).fit_predict(X)) for _ in range(500)])

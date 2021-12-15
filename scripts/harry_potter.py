@@ -3,7 +3,6 @@ import numpy as np
 from sklearn.metrics import adjusted_rand_score as ARI
 from sklearn.cluster import KMeans
 import lsbm
-from utilities import *
 
 import matplotlib.pyplot as plt
 from matplotlib import rc
@@ -16,7 +15,7 @@ B = 1000
 
 ## Contruct the adjacency matrix
 A = np.zeros((65,65),int)
-for line in np.loadtxt('Data/potter.csv',delimiter=',',dtype=str):
+for line in np.loadtxt('../data/potter.csv',delimiter=',',dtype=str):
     ## Example line '0,45,-', where '-' denotes enmity ('+' for friendship) 
     if line[2] == '-':
         A[int(line[0]),int(line[1])] = 1
@@ -27,7 +26,7 @@ one_link = np.where(np.logical_or(A.sum(axis=0) != 0, A.sum(axis=0) != 0))[0]
 A = A[one_link][:,one_link]
 
 ## Names
-names = np.loadtxt('Data/characters.csv', delimiter=',', dtype=str, skiprows=1)[:,1][one_link]
+names = np.loadtxt('../data/characters.csv', delimiter=',', dtype=str, skiprows=1)[:,1][one_link]
 
 ## Spectral decomposition and ASE
 Lambda, Gamma = np.linalg.eigh(A)
@@ -48,11 +47,11 @@ m.initialise(z=KMeans(n_clusters=m.K).fit_predict(m.X), theta=(np.abs(m.X[:,0])+
                             Lambda_0=(1/m.n)**2, g_prior=False, b_0=0.001)
 ## Sampler
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
-np.save('Harry/out_theta.npy',q[0])
-np.save('Harry/out_z.npy',q[1])
+np.save('../Harry/out_theta.npy',q[0])
+np.save('../Harry/out_z.npy',q[1])
 
 ## Estimate clustering
-clust = estimate_communities(q=q[1],m=m)
+clust = lsbm.estimate_communities(q=q[1],m=m)
 
 ## MAP curves
 uu = m.map(clust,X[:,0],np.linspace(np.min(X[:,0]),np.max(X[:,0]),500))
@@ -85,7 +84,7 @@ ax.text(X[np.where(names=='Aragog')[0],0][0],X[np.where(names=='Aragog')[0],1][0
 ax.text(X[np.where(names=='Quirinus Quirrell')[0],0][0],X[np.where(names=='Quirinus Quirrell')[0],1][0],'Quirinus Quirrell')
 ax.text(X[np.where(names=='Argus Filch')[0],0][0],X[np.where(names=='Argus Filch')[0],1][0],'Argus Filch')
 ax.text(X[np.where(names=='Peter Pettigrew')[0],0][0],X[np.where(names=='Peter Pettigrew')[0],1][0],'Peter Pettigrew')
-plt.savefig("Harry/x12_harry.pdf",bbox_inches='tight')
+plt.savefig("../Harry/x12_harry.pdf",bbox_inches='tight')
 plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
 ## Setup for truncated power basis
@@ -97,7 +96,7 @@ mmax = np.max(X,axis=0)[0]
 knots =  np.linspace(start=mmin,stop=mmax,num=nknots+2)[1:-1]
 for k in range(2):
     fW[k,0] = lambda x: np.array([x])
-    fW[k,1] = lambda x: np.array([x, x ** 2, x ** 3] + [relu(x - knot) ** 3 for knot in knots])
+    fW[k,1] = lambda x: np.array([x, x ** 2, x ** 3] + [lsbm.relu(x - knot) ** 3 for knot in knots])
 
 ## Sampler
 np.random.seed(117)
@@ -105,10 +104,10 @@ m = lsbm.lsbm_gibbs(X=X[:,:2], K=2, W_function=fW)
 m.initialise(z=KMeans(n_clusters=m.K).fit_predict(m.X), theta=(np.abs(m.X[:,0])+np.random.normal(size=m.n,scale=0.001)), 
                             Lambda_0=(1/m.n)**2, g_prior=False, b_0=0.001)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
-np.save('Harry/out_theta_splines.npy',q[0])
-np.save('Harry/out_z_splines.npy',q[1])
+np.save('../Harry/out_theta_splines.npy',q[0])
+np.save('../Harry/out_z_splines.npy',q[1])
 ## Estimate clustering
-clust = estimate_communities(q=q[1],m=m)
+clust = lsbm.estimate_communities(q=q[1],m=m)
 
 ## Figure 6(b)
 uu = m.map(clust,X[:,0],np.linspace(np.min(X[:,0]),np.max(X[:,0]),500))
@@ -120,5 +119,5 @@ ax.plot(xx, uu[0][0,1], c='#FFC107')
 ax.plot(xx, uu[0][1,1], c='#004D40')
 ax.set_xlabel('$$\\hat{\\mathbf{X}}_1$$')
 ax.set_ylabel('$$\\hat{\\mathbf{X}}_2$$')
-plt.savefig("Harry/x12_harry_splines.pdf",bbox_inches='tight')
+plt.savefig("../Harry/x12_harry_splines.pdf",bbox_inches='tight')
 plt.show(block=False); plt.clf(); plt.cla(); plt.close()

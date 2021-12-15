@@ -5,11 +5,9 @@ from matplotlib import rc
 rc('font',**{'family':'serif','serif':['Times']})
 rc('text', usetex=True)
 
-## Run in DCSBM code folder
-
 ## Load data
-X = np.load('X_icl1.npy')
-lab = np.loadtxt('labs1.csv', delimiter=',', dtype=int)
+X = np.load('../data/X_icl1.npy')
+lab = np.loadtxt('../data/labs1.csv', delimiter=',', dtype=int)
 
 from sklearn.linear_model import LinearRegression
 rr = np.linspace(0,2.1,num=300)
@@ -34,5 +32,5 @@ for i in range(2):
 ax.legend()
 plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
 plt.ylabel('$$\\hat{\\mathbf{X}}_2$$')
-plt.savefig("x12_maths_cive.pdf",bbox_inches='tight')
+plt.savefig("../pictures/x12_maths_cive.pdf",bbox_inches='tight')
 plt.show()

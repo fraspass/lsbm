@@ -2,7 +2,6 @@
 import numpy as np
 from sklearn.metrics import adjusted_rand_score as ari
 import lsbm
-from utilities import *
 from sklearn.preprocessing import LabelEncoder as labeler
 
 import matplotlib.pyplot as plt
@@ -16,10 +15,10 @@ M = 10000
 B = 1000
 
 ## Import labels
-lab = np.loadtxt('Data/drosophila_labels.csv', dtype=str)
+lab = np.loadtxt('../data/drosophila_labels.csv', dtype=str)
 lab = labeler().fit(lab).transform(lab)
 ## Import embeddings
-X = np.loadtxt('Data/drosophila_dase.csv', delimiter=',')
+X = np.loadtxt('../data/drosophila_dase.csv', delimiter=',')
 
 ## Truncated power splines
 knots = {}
@@ -58,7 +57,7 @@ z_init[np.where(z_init == 4)[0]] = 0
 z_init[np.where(z_init == 5)[0]] = 3
 
 ## Relabel k-means output using marginal likelihoods --> Match communities with 'best fitting' curve
-z_optim, perm_optim = marginal_likelihood_relabeler(z_init=z_init, m=m)
+z_optim, perm_optim = lsbm.marginal_likelihood_relabeler(z_init=z_init, m=m)
 ari(z_optim, lab)
 
 ## Initialise model
@@ -68,20 +67,20 @@ m.initialise(z=np.copy(z_optim), theta=m.X[:,0]+np.random.normal(size=m.n,scale=
 ## Run the sampler
 np.random.seed(111)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
-np.save('Drosophila/out_theta_full.npy',q[0])
-np.save('Drosophila/out_z_full.npy',q[1])
+np.save('../Drosophila/out_theta_full.npy',q[0])
+np.save('../Drosophila/out_z_full.npy',q[1])
 
 ## Estimate clustering
-clust = estimate_communities(q=q[1],m=m)
-clust = relabel_matching(lab, clust)
+clust = lsbm.estimate_communities(q=q[1],m=m)
+clust = lsbm.relabel_matching(lab, clust)
 ## Evaluate adjusted Rand index
 a1 = ari(clust, lab)
 
 ## Majority rule (label switching appears to be avoided since the functions are different)
-cc = estimate_majority(q[1]) 
-cc = relabel_matching(lab, cc)
+cc = lsbm.estimate_majority(q[1]) 
+cc = lsbm.relabel_matching(lab, cc)
 a2 = ari(cc, lab)
-np.save('Drosophila/ari_full.npy',np.array([a1,a2]))
+np.save('../Drosophila/ari_full.npy',np.array([a1,a2]))
 
 ### Plots
 xx = np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),250)
@@ -104,7 +103,7 @@ for j in range(1,m.d):
     plt.xlabel('$$\\hat{\\mathbf{Y}}_1$$')
     plt.ylabel('$$\\hat{\\mathbf{Y}}_'+str(j+1)+'$$')
     plt.legend()
-    plt.savefig('Drosophila/ddroso_1'+str(j+1)+'.pdf',bbox_inches='tight')
+    plt.savefig('../Drosophila/ddroso_1'+str(j+1)+'.pdf',bbox_inches='tight')
     plt.show(block=False); plt.clf(); plt.cla(); plt.close()
 
 ### Define latent basis functions (Priebe et al., 2017 & Athreya et al., 2018)
@@ -125,7 +124,7 @@ for j in range(d):
 m = lsbm.lsbm_gibbs(X=X, K=4, W_function=fW)
 np.random.seed(111)
 ## As before, relabel z_optim using marginal likelihoods (with the updated fW)
-z_optim, perm_optim = marginal_likelihood_relabeler(z_init=z_init, m=m, first_linear=[True,False,False,False])
+z_optim, perm_optim = lsbm.marginal_likelihood_relabeler(z_init=z_init, m=m, first_linear=[True,False,False,False])
 
 ## Initialise model
 np.random.seed(111)
@@ -134,14 +133,14 @@ m.initialise(z=z_optim, theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01),
 ## Run the sampler
 np.random.seed(111)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
-np.save('Drosophila/out_theta_priebe.npy',q[0])
-np.save('Drosophila/out_z_priebe.npy',q[1])
+np.save('../Drosophila/out_theta_priebe.npy',q[0])
+np.save('../Drosophila/out_z_priebe.npy',q[1])
 
 ## Majority rule
-cc = estimate_majority(q[1]) 
-cc = relabel_matching(lab, cc)
+cc = lsbm.estimate_majority(q[1]) 
+cc = lsbm.relabel_matching(lab, cc)
 a = ari(cc, lab)
-np.save('Drosophila/ari_priebe.npy',np.array([a]))
+np.save('../Drosophila/ari_priebe.npy',np.array([a]))
 
 ## Plot
 xx = np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),250)
@@ -168,5 +167,5 @@ for j in range(1,6):
     plt.xlabel('$$\\hat{\\mathbf{Y}}_1$$')
     plt.ylabel('$$\\hat{\\mathbf{Y}}_'+str(j+1)+'$$')
     plt.legend()
-    plt.savefig('Drosophila/droso_priebe_1'+str(j+1)+'.pdf',bbox_inches='tight')
+    plt.savefig('../Drosophila/droso_priebe_1'+str(j+1)+'.pdf',bbox_inches='tight')
     plt.show(block=False); plt.clf(); plt.cla(); plt.close()

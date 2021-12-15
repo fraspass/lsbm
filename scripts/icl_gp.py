@@ -2,7 +2,7 @@
 import numpy as np
 from sklearn.metrics import adjusted_rand_score as ari
 from sklearn.cluster import KMeans
-from utilities import *
+import lsbm
 
 import matplotlib.pyplot as plt
 #from matplotlib import rc
@@ -10,12 +10,9 @@ import matplotlib.pyplot as plt
 #rc('text', usetex=True)
 
 ## Load data
-X = np.load('Data/X_icl2.npy')[:,:5]
+X = np.load('../data/X_icl2.npy')[:,:5]
 n = X.shape[0]
-lab = np.loadtxt('Data/labs2.csv', dtype=int)
-
-## Import lsbm_gp
-import lsbm_gp
+lab = np.loadtxt('../data/labs2.csv', dtype=int)
 
 #####################
 ## Kernel function ##
@@ -42,21 +39,21 @@ for k in range(4):
 
 ### Setup model and MCMC
 M = 10000; B = 1000
-m = lsbm_gp.lsbm_gp_gibbs(X=X[:,:5], K=4, csi=csi)
+m = lsbm.lsbm_gp_gibbs(X=X[:,:5], K=4, csi=csi)
 np.random.seed(11711)
 z_init = np.random.choice(m.K,size=m.n)
 thet = X[:,0]+np.random.normal(size=m.n,scale=0.01)
 m.initialise(z=np.copy(z_init), theta=thet, mu_theta=X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=True)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1, fast_update=False)
-np.save('ICL/out_theta_gp.npy',q[0])
-np.save('ICL/out_z_gp.npy',q[1])
+np.save('../ICL/out_theta_gp.npy',q[0])
+np.save('../ICL/out_z_gp.npy',q[1])
 
 ## Estimate clustering
-clust = estimate_communities(q=q[1],m=m)
+clust = lsbm.estimate_communities(q=q[1],m=m)
 ## Evaluate adjusted Rand index
 a = ari(clust, lab)
-np.save('ICL/ari_gp.npy',a)
-clust = relabel_matching(lab, clust)
+np.save('../ICL/ari_gp.npy',a)
+clust = lsbm.relabel_matching(lab, clust)
 
 ## Calculate MAP curves
 map_est = m.map(z=clust, theta=m.X[:,0], range_values=np.linspace(np.min(m.X[:,0]),np.max(m.X[:,0]),250))
@@ -87,5 +84,5 @@ ax.legend()
 #    ax.plot(xx, map_est[0][g,1], c = cdict[g])
 #    ax.scatter(X[:,0][ix], X[:,1][ix], c = cdict[g], label = group[g], marker=mms[g], edgecolor='black', linewidth=0.3)
 
-plt.savefig("ICL/x12_gp.pdf",bbox_inches='tight')
+plt.savefig("../ICL/x12_gp.pdf",bbox_inches='tight')
 plt.show()
