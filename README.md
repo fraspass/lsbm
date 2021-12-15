@@ -13,12 +13,12 @@ The repository contains multiple directories:
 
 ## Understanding the code
 
-The main tool for inference on LSBMs is the MCMC sampler `lsbm_gp_gibbs` contained in the file `lsbm_gp.py`. The class can be initialised using three objects: 
+The main tool for inference on LSBMs is the MCMC sampler `lsbm_gp_gibbs` contained in the file `lib/lsbm/lsbm_gp.py`. The class can be initialised using three objects: 
 - a <img src="svgs/2103f85b8b1477f430fc407cad462224.svg?invert_in_darkmode" align=middle width=8.55596444999999pt height=22.831056599999986pt/>-dimensional embedding `X`, a <img src="svgs/fa3e74d315d8dd8569c63afaf353839c.svg?invert_in_darkmode" align=middle width=38.514031049999986pt height=22.831056599999986pt/>`numpy` array, where <img src="svgs/55a049b8f161ae7cfeb0197d75aff967.svg?invert_in_darkmode" align=middle width=9.86687624999999pt height=14.15524440000002pt/> is the number of nodes;
 - the number of communities `K`, a positive integer;
 - the set of kernels `csi`, a dictionary containing <img src="svgs/8c2aba4645470ea758c7014c414f8703.svg?invert_in_darkmode" align=middle width=43.784154149999985pt height=22.831056599999986pt/> kernel functions <img src="svgs/61a21a71d91d1afe29ef6c87bbcfb541.svg?invert_in_darkmode" align=middle width=24.466483799999992pt height=22.831056599999986pt/> for the Gaussian processes.
 
-Additionally, the file `lsbm.py` contains a simplified class `lsbm_gibbs` which can be used for models where the kernel functions are assumed to be *inner products*. The latent functions in such models can be expressed in the form <img src="svgs/a47365b803cbfbae589ba00d757323c3.svg?invert_in_darkmode" align=middle width=181.69460429999998pt height=24.65753399999998pt/>, for basis functions <img src="svgs/940aa137531740764ccb7da48a4f4f4e.svg?invert_in_darkmode" align=middle width=114.29779349999998pt height=22.831056599999986pt/> and corresponding weights <img src="svgs/5628dabe825c1081c1d0ab40cb139570.svg?invert_in_darkmode" align=middle width=85.20361904999999pt height=22.648391699999998pt/> with joint normal-inverse-gamma prior with the variance parameter: 
+Additionally, the file `lib/lsbm/lsbm.py` contains a simplified class `lsbm_gibbs` which can be used for models where the kernel functions are assumed to be *inner products*. The latent functions in such models can be expressed in the form <img src="svgs/a47365b803cbfbae589ba00d757323c3.svg?invert_in_darkmode" align=middle width=181.69460429999998pt height=24.65753399999998pt/>, for basis functions <img src="svgs/940aa137531740764ccb7da48a4f4f4e.svg?invert_in_darkmode" align=middle width=114.29779349999998pt height=22.831056599999986pt/> and corresponding weights <img src="svgs/5628dabe825c1081c1d0ab40cb139570.svg?invert_in_darkmode" align=middle width=85.20361904999999pt height=22.648391699999998pt/> with joint normal-inverse-gamma prior with the variance parameter: 
 <p align="center"><img src="svgs/63abc06d8638ba2ed2ca385d1820726f.svg?invert_in_darkmode" align=middle width=245.4917685pt height=20.50407645pt/></p>
 
 The class `lsbm` does *not* require a dictionary of kernel functions for initialisation, but a dictionary `W_function` containing the basis functions. The prior parameters of the NIG prior are then specified using the function `initialisation` within the same class. The class uses the Zellner's <img src="svgs/3cf4fbd05970446973fc3d9fa3fe3c41.svg?invert_in_darkmode" align=middle width=8.430376349999989pt height=14.15524440000002pt/>-prior as default. 
@@ -65,11 +65,11 @@ q = m.mcmc(samples=10000, burn=1000, sigma_prop=0.5, thinning=1)
 
 ## Reproducing the results in the paper
 
-The figures in the paper could be reproduced using the following files:
+The figures in the paper could be reproduced using the following files in the directory `scripts`:
 - Figure 1: `sim_pictures_intro.py`;
 - Figure 3: `sim_pictures.py`;
 - Figures 4 and 5: `sim.py`;
 - Figure 6: `harry_potter.py`;
 - Figure 7 and 8: `drosophila.py`.
 
-For security reasons, the ICL network data have *not* been made available, but the code to run the quadratic model and truncated power basis spline model are available in `icl.py`. Similarly, `icl_gp.py` reproduces the same models under an explicit Gaussian process setting.
+For security reasons, the ICL network data have *not* been made available, but the code to run the quadratic model and truncated power basis spline model are available in `scripts/icl.py`. Similarly, `scripts/icl_gp.py` reproduces the same models under an explicit Gaussian process setting.
