@@ -1,6 +1,15 @@
 # Latent structure blockmodels for Bayesian spectral graph clustering
 
-This repository contains *python* code used to reproduce results and simulations in *Sanna Passino, F. and Heard, N. A. (2021+)*, [*Latent structure blockmodels for Bayesian spectral graph clustering*](http://arxiv.org/abs/2107.01734).
+This repository contains a *python* library used to implement methodologies and reproduce results in *Sanna Passino, F. and Heard, N. A. (2021+)*, [*Latent structure blockmodels for Bayesian spectral graph clustering*](http://arxiv.org/abs/2107.01734).
+
+The _python_ library can be installed (in edit mode) as follows:
+```
+pip install -e lib/
+```
+
+The repository contains multiple directories:
+* `notebooks` contains Jupyter notebooks with examples on how to use the library;
+* `lib` contains the _python_ library.
 
 ## Understanding the code
 
