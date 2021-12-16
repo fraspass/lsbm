@@ -6,10 +6,16 @@ The _python_ library can be installed (in edit mode) as follows:
 ```
 pip install -e lib/
 ```
+The library can then be imported in any _python_ session:
+```python3
+import lsbm
+```
 
 The repository contains multiple directories:
+* `lib` contains the _python_ library;
+* `data` contains some of the datasets used in the paper;
 * `notebooks` contains Jupyter notebooks with examples on how to use the library;
-* `lib` contains the _python_ library.
+* `scripts` contains _python_ scripts to reproduce the results in the paper. 
 
 ## Understanding the code
 
