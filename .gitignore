@@ -20,3 +20,6 @@ scripts/drosophila_gmm.R
 scripts/mi*
 scripts/icl_extra.py
 notebooks/.ipynb_checkpoints/*
+Block_Sim/*
+scripts/results_alternatives.txt
+

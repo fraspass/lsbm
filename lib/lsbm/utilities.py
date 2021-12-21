@@ -19,6 +19,17 @@ def estimate_communities(q,m):
     clust = cluster_model.fit_predict(1-psm)
     return clust
 
+## Estimate ARI
+def estimate_ari(q,z):
+    import numpy as np
+    from sklearn.metrics import adjusted_rand_score as ari
+    ## Scaled posterior similarity matrix
+    aris = np.zeros((q.shape[1],q.shape[2]))
+    for k in range(q.shape[1]):
+        for i in range(q.shape[2]):
+            aris[k,i] = ari(z, q[:,k,i])
+    return aris
+
 ## Estimate communities using majority rule from output of MCMC
 def estimate_majority(q):
     import numpy as np
@@ -90,7 +101,6 @@ def relabel_matching(v1, v2):
     v2_relabelled = np.copy(v2)
     ## Initialise the quantities of interest (initialisation and best permutation)
     v2_best = np.copy(v2)
-    max_perm = np.arange(np.max(v2))
     max_score_diagonal = np.sum(np.diag(pd.crosstab(v1,v2)))
     ## Calculate the possible permutations of the labels
     import itertools
@@ -100,6 +110,31 @@ def relabel_matching(v1, v2):
         score_diagonal = np.sum(np.diag(pd.crosstab(v1,v2_relabelled)))
         if score_diagonal > max_score_diagonal:
             max_score_diagonal = score_diagonal
-            max_perm = perm
             v2_best = np.copy(v2_relabelled)
     return v2_best
+
+## Takes a vector and returns its spherical coordinates
+def cart_to_sphere(x):
+    import numpy as np
+    x[x == 0] = -np.finfo(float).eps
+    ## theta_1
+    q = np.arccos(x[1] / np.linalg.norm(x[:2]))
+    sphere_coord = [q] if x[0] >= 0 else [2*np.pi - q]
+    ## Loop for theta_2, ..., theta_m-1
+    for j in range(2,len(x)):
+        sphere_coord += [2 * np.arccos(x[j] / np.linalg.norm(x[:(j+1)]))]
+    ## Return the result in a numpy array
+    return np.array(sphere_coord)
+
+## Takes a matrix and returns the spherical coordinates obtained along the given axis
+def theta_transform(X,axis=1):
+    import numpy as np
+    ## Apply the function theta_transform along the axis
+    return np.apply_along_axis(func1d=cart_to_sphere, axis=axis, arr=X)
+
+## Row-normalisation
+def row_normalise(X):
+    import numpy as np
+    X_sum = np.linalg.norm(X, axis=1)
+    X_sum[X_sum == 0] = np.finfo(float).eps
+    return np.divide(X, X_sum.reshape(-1,1))
