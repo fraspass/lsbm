@@ -25,3 +25,6 @@ scripts/results_alternatives.txt
 PGPDA-master/*
 scripts/*
 data/block_sim/A_*.npy
+pgpem/__pycache__ 
+pgpem/moon*
+pgpem/*moon.npy
