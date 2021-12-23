@@ -23,3 +23,5 @@ notebooks/.ipynb_checkpoints/*
 Block_Sim/*
 scripts/results_alternatives.txt
 PGPDA-master/*
+scripts/*
+data/block_sim/A_*.npy
