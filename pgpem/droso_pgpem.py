@@ -11,7 +11,7 @@ X = np.loadtxt('../data/drosophila_dase.csv', delimiter=',')
 lab = np.loadtxt('../data/droso_labels_numbers.csv', dtype=int).astype(int)
 
 # Set up the model and posterior sampler
-m = pgpem.PGPEM(x=X, K=4, standardise=False, sig=5)
+m = pgpem.PGPEM(x=X, K=4, standardise=False, sig=1.90)
 m.initialise_t(random=False, row_normalise=True)
 m.fit_em(max_iter=50)
 print(ari(lab, np.argmax(m.t, axis=1)))
