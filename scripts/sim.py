@@ -1,8 +1,6 @@
 #! /usr/bin/env python3
 import numpy as np
-from scipy.sparse import coo_matrix
 from sklearn.metrics import adjusted_rand_score as ari
-from sklearn.cluster import KMeans
 import lsbm
 
 import matplotlib.pyplot as plt
@@ -27,6 +25,7 @@ EA = np.dot(X,X.T)
 np.fill_diagonal(a=EA, val=np.zeros(n))
 ## Adjacency matrix
 A = np.random.binomial(n=1,p=EA)
+np.save('../data/A_hw.npy', A)
 ## Spectral embedding
 Lambda, Gamma = np.linalg.eigh(A)
 k = np.argsort(np.abs(Lambda))[::-1][:3]
@@ -42,6 +41,8 @@ for k in range(2):
 ## Procrustes alignment for visualisation
 from scipy.linalg import orthogonal_procrustes as proc
 X_tilde = np.dot(X_hat,proc(X_hat,X)[0])
+np.save('../data/X_hw.npy', X_tilde)
+np.save('../data/z_hw.npy', z)
 
 ## Plot of marginals
 plt.scatter(X_tilde[:,0], X_tilde[:,1], c=np.array(['#009E73','#0072B2'])[z], edgecolor='black',linewidth=0.3)

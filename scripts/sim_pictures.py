@@ -29,6 +29,8 @@ for i in range(n-1):
         A[i,j] = np.random.binomial(n=1,p=np.inner(m[z[i]],m[z[j]]),size=1)
         A[j,i] = A[i,j]
 
+np.save('../data/block_sim/A_sbm.npy', A)
+
 ## Embedding
 Lambda, Gamma = np.linalg.eigh(A)
 k = np.argsort(np.abs(Lambda))[::-1][:2]
@@ -42,7 +44,7 @@ X_tilde = np.dot(X_hat,proc(X_hat,X)[0])
 np.save('../data/block_sim/X_sbm.npy', X_hat)
 
 ## Plot
-plt.scatter(X_tilde[:,0], X_tilde[:,1], c=np.array(['#009E73','#0072B2'])[z], edgecolor='black',linewidth=0.3)
+plt.scatter(X_tilde[:,0], X_tilde[:,1], c=np.array(['#13A0C6','#EB8F18'])[z], edgecolor='black',linewidth=0.3)
 plt.scatter([m[0][0], m[1][0]], [m[0][1], m[1][1]], edgecolor='black',linewidth=0.3, c='black')
 plt.xlabel('$$\\hat{\\mathbf{X}}_1$$')
 plt.ylabel('$$\\hat{\\mathbf{X}}_2$$')
@@ -60,6 +62,8 @@ for i in range(n-1):
         A[i,j] = np.random.binomial(n=1,p=np.inner(X[i],X[j]),size=1)
         A[j,i] = A[i,j]
 
+np.save('../data/block_sim/A_dcsbm.npy', A)
+
 ## Embedding
 Lambda, Gamma = np.linalg.eigh(A)
 k = np.argsort(np.abs(Lambda))[::-1][:2]
@@ -70,7 +74,7 @@ X_tilde = np.dot(X_hat,proc(X_hat,X)[0])
 np.save('../data/block_sim/X_dcsbm.npy', X_hat)
 
 ## Plot
-plt.scatter(X_tilde[:,0], X_tilde[:,1], c=np.array(['#009E73','#0072B2'])[z], edgecolor='black',linewidth=0.3)
+plt.scatter(X_tilde[:,0], X_tilde[:,1], c=np.array(['#13A0C6','#EB8F18'])[z], edgecolor='black',linewidth=0.3)
 uu1 = np.argsort(X[z==0,0])
 uu2 = np.argsort(X[z==1,0])
 plt.plot(X[z==0,0][uu1], X[z==0,1][uu1], '-', linewidth=3, c='black')
@@ -95,6 +99,8 @@ for i in range(n-1):
         A[i,j] = np.random.binomial(n=1,p=np.inner(X[i],X[j]),size=1)
         A[j,i] = A[i,j]
 
+np.save('../data/block_sim/A_quad.npy', A)
+
 ## Embedding
 Lambda, Gamma = np.linalg.eigh(A)
 k = np.argsort(np.abs(Lambda))[::-1][:2]
@@ -105,7 +111,7 @@ X_tilde = np.dot(X_hat,proc(X_hat,X)[0])
 np.save('../data/block_sim/X_quad.npy', X_hat)
 
 ## Plot
-plt.scatter(X_tilde[:,0], X_tilde[:,1], c=np.array(['#009E73','#0072B2'])[z], edgecolor='black',linewidth=0.3)
+plt.scatter(X_tilde[:,0], X_tilde[:,1], c=np.array(['#13A0C6','#EB8F18'])[z], edgecolor='black',linewidth=0.3)
 uu1 = np.argsort(X[z==0,0])
 uu2 = np.argsort(X[z==1,0])
 plt.plot(X[z==0,0][uu1], X[z==0,1][uu1], '-', linewidth=3, c='black')
