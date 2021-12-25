@@ -25,7 +25,7 @@ class lsbm_gibbs:
         self.fixed_function = fixed_function
 
     ## Initialise the model parameters
-    def initialise(self, z, theta, Lambda_0=1, a_0=1, b_0=1, nu=1, mu_theta=0, sigma_theta=1, g_prior=True, first_linear=True):
+    def initialise(self, z, theta, Lambda_0=1.0, a_0=1.0, b_0=1.0, nu=1.0, mu_theta=0.0, sigma_theta=1.0, omega=1.0, g_prior=True, first_linear=True):
         ## Initial cluster configuration
         self.z = z
         if np.min(self.z) == 1:
@@ -41,6 +41,8 @@ class lsbm_gibbs:
         ## Theta hyperparameters
         self.mu_theta = mu_theta
         self.sigma_theta = sigma_theta
+        ## K hyperparameters
+        self.omega = omega
         ## Basis functions
         self.g_prior = g_prior
         self.W = {}
@@ -90,7 +92,7 @@ class lsbm_gibbs:
     ########################################################
     ### a. Resample the allocations using Gibbs sampling ###
     ########################################################
-    def gibbs_communities(self,l=1):	
+    def gibbs_communities(self,l=1):    
         ## Change the value of l when too large
         if l > self.n:
             l = self.n
@@ -265,6 +267,65 @@ class lsbm_gibbs:
                         self.Lambda[j][zold] = np.linalg.inv(self.Lambda_inv[j][zold])
                         self.mu[j][zold] = np.dot(self.Lambda[j][zold], self.WtX[j][zold])
                         self.b[j][zold] += (position_prop[j] ** 2 - np.dot(self.mu[j][zold].T,np.dot(self.Lambda_inv[j][zold],self.mu[j][zold]))) / 2
+        return None
+
+    #################################################
+    ### c. Propose to add/remove an empty cluster ###
+    #################################################
+    def propose_empty(self):    
+        if self.K == 1:
+            K_prop = 2
+        elif (self.K == self.n):
+            K_prop = self.n - 1
+        else:
+            K_prop = np.random.choice([self.K-1, self.K+1])
+        ## Assign values to the variable remove
+        if K_prop < self.K:
+            remove = True
+        else:
+            remove = False
+        ## If there are no empty clusters and K_prop = K-1, reject the proposal
+        if K_prop < self.K and not np.any(self.nk == 0):
+            return None
+        ## Propose a new (empty) vector of cluster allocations
+        if remove:
+            ## Delete empty cluster with largest index (or sample at random)
+            ind_delete = np.random.choice(np.where(self.nk == 0)[0])
+            nk_prop = np.delete(self.nk, ind_delete)
+        else:
+            nk_prop = np.append(self.nk, 0)
+        ## Common term for the acceptance probability
+        accept_ratio = self.K * loggamma(self.nu / self.K) - K_prop * loggamma(self.nu / K_prop) + \
+                            np.sum(loggamma(nk_prop + self.nu / K_prop)) - np.sum(loggamma(self.nk + self.nu / self.K)) + \
+                            (K_prop - self.K) * np.log(1 - self.omega) * np.log(.5) * int(self.K == 1) - np.log(.5) * int(self.K == self.n)
+        ## Accept or reject the proposal
+        accept = (-np.random.exponential(1) < accept_ratio)
+        ## Scale all the values if an empty cluster is added
+        if accept:
+            self.nk = nk_prop
+            if not remove:
+                self.a = np.append(self.a, self.a0)
+                for j in range(self.d):
+                    self.b[j][K_prop-1] = self.b0
+                    if not (j == 0 and np.all(self.first_linear)):
+                        self.WtW[j][K_prop-1] = np.zeros((self.W[0,j].shape[1], self.W[0,j].shape[1]))
+                        self.WtX[j][K_prop-1] = np.zeros((self.W[0,j].shape[1], self.W[0,j].shape[1]))
+                        self.Lambda_inv[j][K_prop-1] = np.copy(self.Lambda0_inv[0,j])
+                        self.Lambda[j][K_prop-1] = np.copy(self.Lambda0[0,j])
+                        self.mu[j][K_prop-1] = np.zeros(self.W[0,j].shape[1])
+            else:
+                ## Delete old values
+                self.a = np.delete(self.a, ind_delete)
+                for j in range(self.d):
+                    del self.b[j][ind_delete]
+                    if not (j == 0 and np.all(self.first_linear)):
+                        del self.WtW[j][ind_delete]
+                        del self.WtX[j][ind_delete]
+                        del self.Lambda_inv[j][ind_delete]
+                        del self.Lambda[j][ind_delete]
+                        del self.mu[j][ind_delete]
+            ## Update K
+            self.K = K_prop
         return None
 
     ###############################
