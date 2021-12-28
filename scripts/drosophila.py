@@ -33,7 +33,7 @@ for k in range(4):
     fW[k,0] = lambda x: np.array([x])
     for j in range(1,6):
         if k == 0:
-            fW[k,j] = lambda x: np.array([x, x ** 2, x ** 3]) # + [relu(knot - x) ** 3 for knot in knots])
+            fW[k,j] = lambda x: np.array([x, x ** 2, x ** 3])
         elif k == 1:
             fW[k,j] = lambda x: np.array([1,x])
         elif k == 3:

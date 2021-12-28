@@ -42,7 +42,7 @@ class lsbm_gibbs:
                 raise ValueError('If K is not fixed, first_linear is either a boolean or a vector of booleans of size equal to the number of possible kernels.')
 
     ## Initialise the model parameters
-    def initialise(self, z, theta, Lambda_0=1.0, a_0=1.0, b_0=1.0, nu=1.0, mu_theta=0.0, sigma_theta=1.0, omega=0.1, g_prior=True):
+    def initialise(self, z, theta, Lambda_0=1.0, a_0=1.0, b_0=1.0, nu=1.0, mu_theta=0.0, sigma_theta=1.0, omega=0.9, g_prior=True):
         ## Initial cluster configuration
         self.z = z
         if np.min(self.z) == 1:
