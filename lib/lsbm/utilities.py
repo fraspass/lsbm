@@ -38,7 +38,7 @@ def estimate_majority(q):
     return cc
 
 ## Relabel the initial allocations using the marginal likelihood
-def marginal_likelihood_relabeler(z_init, m, first_linear=True, seed=111):
+def marginal_likelihood_relabeler(z_init, m, seed=111):
     import numpy as np
     ## Copy the initial labels
     z_relabelled = np.copy(z_init)
@@ -49,7 +49,7 @@ def marginal_likelihood_relabeler(z_init, m, first_linear=True, seed=111):
     np.random.seed(seed)
     ## Initialise the model using z_init
     m.initialise(z=z_init, theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01), 
-                                Lambda_0=(1/m.n)**2, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=first_linear)
+                                Lambda_0=(1/m.n)**2, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001)
     ## Calculate the marginal loglikelihood
     max_mar_loglik = m.marginal_loglikelihood()
     ## Calculate the possible permutations of the labels
@@ -62,7 +62,7 @@ def marginal_likelihood_relabeler(z_init, m, first_linear=True, seed=111):
         ## Initialise
         np.random.seed(seed)
         m.initialise(z=z_relabelled, theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01), 
-                                Lambda_0=(1/m.n)**2, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=first_linear)
+                                Lambda_0=(1/m.n)**2, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001)
         ## Marginal likelihood
         ml = m.marginal_loglikelihood()
         ## Update only if the marginal likelihood is larger than previous maximum

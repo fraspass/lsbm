@@ -121,7 +121,7 @@ for j in range(d):
         fW[k,j] = lambda x: np.array([1])
 
 ## Set up the model and posterior sampler
-m = lsbm.lsbm_gibbs(X=X, K=4, W_function=fW)
+m = lsbm.lsbm_gibbs(X=X, K=4, W_function=fW, first_linear=[True,False,False,False])
 np.random.seed(111)
 ## As before, relabel z_optim using marginal likelihoods (with the updated fW)
 z_optim, perm_optim = lsbm.marginal_likelihood_relabeler(z_init=z_init, m=m, first_linear=[True,False,False,False])
@@ -129,7 +129,7 @@ z_optim, perm_optim = lsbm.marginal_likelihood_relabeler(z_init=z_init, m=m, fir
 ## Initialise model
 np.random.seed(111)
 m.initialise(z=z_optim, theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01), 
-                            Lambda_0=(1/m.n)**2, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=[True,False,False,False])
+                            Lambda_0=(1/m.n)**2, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001)
 ## Run the sampler
 np.random.seed(111)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
