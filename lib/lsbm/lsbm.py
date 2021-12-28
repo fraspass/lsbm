@@ -78,7 +78,6 @@ class lsbm_gibbs:
             for k in range(self.K if self.K_fixed else self.kappa):
                 if g_prior:
                     self.Lambda0_inv[k,j] = Lambda_0 * np.dot(self.W[k,j].T,self.W[k,j]) 
-                    # np.diag(np.ones(len(self.fW[j](1))) * Lambda_0)
                 else:
                     self.Lambda0_inv[k,j] = np.diag(np.ones(len(self.fW[k,j](1))) * Lambda_0)
                 self.Lambda0[k,j] = np.linalg.inv(self.Lambda0_inv[k,j])
@@ -328,7 +327,7 @@ class lsbm_gibbs:
         accept = (-np.random.exponential(1) < accept_ratio)
         ## Scale all the values if an empty cluster is added
         if verbose:
-            print('\t',['Add','Remove'][int(remove)], accept, np.exp(accept_ratio), K_prop, '\r')
+            print('\t',['Add','Remove'][int(remove)], accept, np.exp(accept_ratio), K_prop, end='')
         if accept:
             self.nk = nk_prop
             if not remove:
@@ -440,7 +439,7 @@ class lsbm_gibbs:
                     W = self.W[fk_prop,j][np.append([q,q_prime],indices)]
                     WtW_merge[j] = np.dot(W.T,W)
                     WtX_merge[j] = np.dot(W.T,X)
-                    Lambda_inv_merge[j] = self.Lambda0_inv[self.fk[z],j] + WtW_merge[j]
+                    Lambda_inv_merge[j] = self.Lambda0_inv[fk_prop,j] + WtW_merge[j]
                     Lambda_merge[j] = np.linalg.inv(Lambda_inv_merge[j])
                     mu_merge[j] = np.dot(Lambda_merge[j], WtX_merge[j])
                     b_merge[j] += (self.X[q,j] ** 2 + self.X[q_prime,j] ** 2 + np.dot(self.X[indices][:,j].T,self.X[indices][:,j]) - np.dot(mu_merge[j].T,np.dot(Lambda_inv_merge[j],mu_merge[j]))) / 2
@@ -540,7 +539,7 @@ class lsbm_gibbs:
         # Accept / reject using Metropolis-Hastings
         accept = (-np.random.exponential(1) < acceptance_ratio)
         if verbose:
-            print('\t',['Merge','Split'][int(split)], bool(accept), z, z_prime, K_prop, end='\r')
+            print('\t',['Merge','Split'][int(split)], bool(accept), z, z_prime, K_prop, end='')
         # Update if move is accepted
         if accept:
             if split:
@@ -588,7 +587,50 @@ class lsbm_gibbs:
     ######################################################
     ### e. Resample community-specific functional form ###
     ######################################################
-    def resample_kernel(self, verbose=True):
+    def resample_kernel(self, verbose=False):
+        ## Sample existing community
+        k_group = np.random.choice(self.K) 
+        fk_old = self.fk[k_group]
+        ## Initialise hyperparameter vectors
+        S = {}; b_kernels = {}; WtW_kernels = {}; WtX_kernels = {}; Lambda_inv_kernels = {}; Lambda_kernels = {}; mu_kernels = {}
+        X = self.X[self.z == k_group]
+        theta = self.theta[self.z == k_group]
+        ## Calculate vector of probabilities
+        probs = np.zeros(self.kappa)
+        for k in range(self.kappa):
+            b_kernels[k] = {}; WtW_kernels[k] = {}; WtX_kernels[k] = {}; Lambda_inv_kernels[k] = {}; Lambda_kernels[k] = {}; mu_kernels[k] = {}
+            XX = np.copy(X)
+            for j in range(self.d):
+                if j in self.fixed_function:
+                    XX[:,j] -= self.fixed_W[j][self.z == k_group]
+                if j == 0 and self.first_linear[k]:
+                    b_kernels[k][j] = self.b0 + np.sum((XX[:,j] - theta) ** 2) / 2
+                    probs[k] += loggamma(self.a[k_group]) - loggamma(self.a0) - self.nk[k_group] * np.log(2*np.pi) / 2
+                    probs[k] += self.a0 * loggamma(self.b0) - self.a[k_group] * loggamma(self.b0 + np.sum((XX[:,j] - theta) ** 2) / 2)
+                else:
+                    W = self.W[k,j][self.z == k_group]
+                    WtW_kernels[k][j] = np.dot(W.T,W)
+                    WtX_kernels[k][j] = np.dot(W.T,XX[:,j])
+                    Lambda_inv_kernels[k][j] = WtW_kernels[k][j] + self.Lambda0_inv[k,j]
+                    Lambda_kernels[k][j] = np.linalg.inv(Lambda_inv_kernels[k][j])
+                    mu_kernels[k][j] = np.dot(Lambda_kernels[k][j], WtX_kernels[k][j])
+                    b_kernels[k][j] = self.b0 + (np.dot(XX[:,j].T,XX[:,j]) - np.dot(mu_kernels[k][j].T, np.dot(Lambda_inv_kernels[k][j],mu_kernels[k][j]))) / 2
+                    S[k,j] = np.dot(W, np.dot(self.Lambda0[k,j], W.T)) + np.diag(np.ones(self.nk[k_group]))
+                    probs[k] += dmvt(x=XX[:,j], mu=np.zeros(self.nk[k_group]), Sigma=self.b0 / self.a0 * S[k,j], nu=2*self.a0) 
+        ## Resample new functional form
+        fk_new = np.random.choice(self.kappa, p=np.exp(probs - logsumexp(probs)))
+        if verbose:
+            print('\t',fk_old, fk_new, k_group, end='')
+        if fk_new != fk_old:
+            self.fk[k_group] = fk_new
+            for j in range(self.d):
+                self.b[j][k_group] = b_kernels[fk_new][j]
+                if not(j == 0 and self.first_linear[fk_new]):
+                    self.WtW[j][k_group] = WtW_kernels[fk_new][j]
+                    self.WtX[j][k_group] = WtX_kernels[fk_new][j]
+                    self.Lambda_inv[j][k_group] = Lambda_inv_kernels[fk_new][j]
+                    self.Lambda[j][k_group] = Lambda_kernels[fk_new][j]
+                    self.mu[j][k_group] = mu_kernels[fk_new][j]
         return None
 
     ###############################
@@ -664,7 +706,7 @@ class lsbm_gibbs:
                 elif m == 'split_merge':
                     self.split_merge(verbose=verbose)
                 else:
-                    self.resample_kernel()
+                    self.resample_kernel(verbose=verbose)
                 if verbose:
                     print('\t',m)
                 if s >= burn and store_chains and s % thinning == 0:
