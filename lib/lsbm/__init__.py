@@ -1,13 +1,5 @@
-from .lsbm_gp import (
-	delete_inverse,
-	add_inverse,
-	lsbm_gp_gibbs
-)
-
-from .lsbm import (
-	lsbm_gibbs
-)
-
+from .lsbm_gp import *
+from .lsbm import *
 from .utilities import *
 from .mvt import *
 from .zhu import *
