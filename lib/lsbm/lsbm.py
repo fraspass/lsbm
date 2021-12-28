@@ -36,9 +36,9 @@ class lsbm_gibbs:
             self.first_linear = (self.K if self.K_fixed else self.kappa) * [first_linear]
         else:
             self.first_linear = first_linear
-            if np.sum([isinstance(first_linear[k],bool) for k in first_linear]) != self.K and self.K_fixed:
+            if np.sum([isinstance(k,bool) for k in first_linear]) != self.K and self.K_fixed:
                 raise ValueError('If K is fixed, first_linear is either a boolean or a K-vector of booleans.')
-            if np.sum([isinstance(first_linear[k],bool) for k in first_linear]) != self.kappa and not self.K_fixed:
+            if np.sum([isinstance(k,bool) for k in first_linear]) != self.kappa and not self.K_fixed:
                 raise ValueError('If K is not fixed, first_linear is either a boolean or a vector of booleans of size equal to the number of possible kernels.')
 
     ## Initialise the model parameters
