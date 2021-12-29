@@ -13,7 +13,7 @@ from lsbm.mvt import dmvt
 class lsbm_gibbs:
 
     ## Initialise the class with the number of components and embedding
-    def __init__(self, X, K, W_function, fixed_function={}, K_fixed=False, first_linear=False):
+    def __init__(self, X, K, W_function, fixed_function={}, K_fixed=True, first_linear=False):
         self.X = X
         self.n = X.shape[0]
         self.d = X.shape[1]
