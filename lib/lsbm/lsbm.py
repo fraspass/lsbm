@@ -66,8 +66,8 @@ class lsbm_gibbs:
         for k,j in self.fixed_function:
             self.fixed_W[j] = np.array([self.fixed_function[k,j](self.theta[i]) for i in range(self.n)])[:,0] ## rewrite using only one coefficient (1)
         ## If K_fixed, match each cluster with a set of functions
-        if not self.K_fixed:
-            self.fk = np.zeros(self.K, dtype=int)
+        ## if not self.K_fixed:
+        self.fk = np.zeros(self.K, dtype=int)
         ## Prior parameters
         self.nu = nu
         self.a0 = a_0
@@ -654,7 +654,7 @@ class lsbm_gibbs:
     ### Calculate maximum a posteriori estimate of the parameters given z and theta ###
     ###################################################################################
     def map(self,z,theta,range_values):
-        mm = lsbm_gibbs(X=self.X, K=self.K, W_function=self.fW, fixed_function=self.fixed_W)
+        mm = lsbm_gibbs(X=self.X, K=self.K, W_function=self.fW, fixed_function=self.fixed_W, K_fixed=False)
         mm.initialise(z=z, theta=theta, Lambda_0=self.lambda_coef, a_0=self.a0, b_0=self.b0, nu=self.nu, g_prior=self.g_prior)
         W = {}
         mean = {}; confint = {} 
@@ -666,11 +666,11 @@ class lsbm_gibbs:
             x = range_values[i]
             for j in range(mm.d):
                 for k in range(mm.K):
-                    if j == 0 and mm.first_linear[k]:
+                    if j == 0 and mm.first_linear[0]:
                         mean[k,j][i] = x
                         confint[k,j][i] = t.interval(0.95, df=2*mm.a[k], loc=x, scale=np.sqrt(mm.b[j][k] / mm.a[k])) 
                     else:
-                        W[k,j] = mm.fW[k,j](x)
+                        W[k,j] = mm.fW[0,j](x)
                         mean[k,j][i] = np.dot(W[k,j],mm.mu[j][k])
                         confint[k,j][i] = t.interval(0.95, df=2*mm.a[k], loc=mean[k,j][i], 
                                 scale=np.sqrt(mm.b[j][k] / mm.a[k] * (1 + np.dot(W[k,j].T, np.dot(mm.Lambda[j][k], W[k,j])))))

@@ -28,3 +28,4 @@ data/block_sim/A_*.npy
 pgpem/__pycache__ 
 pgpem/moon*
 pgpem/*moon.npy
+notebooks/icl2.ipynb

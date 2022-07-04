@@ -20,13 +20,6 @@ lab = labeler().fit(lab).transform(lab)
 ## Import embeddings
 X = np.loadtxt('../data/drosophila_dase.csv', delimiter=',')
 
-## Truncated power splines
-knots = {}
-nknots = 3
-mmin = np.min(X,axis=0)[0]
-mmax = np.max(X,axis=0)[0]
-knots =  np.linspace(start=mmin,stop=mmax,num=nknots+2)[1:-1]
-
 ## Define the functions
 fW = {}
 for k in range(4):
@@ -63,7 +56,7 @@ ari(z_optim, lab)
 ## Initialise model
 np.random.seed(111)
 m.initialise(z=np.copy(z_optim), theta=m.X[:,0]+np.random.normal(size=m.n,scale=0.01), 
-                            Lambda_0=(1/m.n)**2, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001, first_linear=True)
+                            Lambda_0=(1/m.n)**2, mu_theta=m.X[:,0].mean(), sigma_theta=10, b_0=0.001) # , first_linear=True)
 ## Run the sampler
 np.random.seed(111)
 q = m.mcmc(samples=M, burn=B, sigma_prop=0.01, thinning=1)
